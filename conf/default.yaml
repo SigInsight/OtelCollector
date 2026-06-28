@@ -1,16 +1,8 @@
 receivers:
-  otlp/spanmetrics:
-    protocols:
-      grpc:
-        endpoint: "localhost:12345"
   otlp:
     protocols:
       grpc:
       http:
-  jaeger:
-    protocols:
-      grpc:
-      thrift_http:
   hostmetrics:
     collection_interval: 30s
     scrapers:
@@ -24,10 +16,14 @@ processors:
   batch:
     send_batch_size: 1000
     timeout: 10s
-  signozspanmetrics/prometheus:
-    metrics_exporter: prometheus
+  signozspanmetrics/delta:
+    metrics_exporter: signozclickhousemetrics
+    metrics_flush_interval: 60s
     latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s ]
-    dimensions_cache_size: 10000
+    dimensions_cache_size: 100000
+    aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
+    enable_exp_histogram: true
+    skip_spans_older_than: 24h
     dimensions:
       - name: service.namespace
         default: default
@@ -44,10 +40,6 @@ processors:
   #   limit_percentage: 50
   #   # 20% of max memory usage spike expected
   #   spike_limit_percentage: 20
-  # queued_retry:
-  #   num_workers: 4
-  #   queue_size: 100
-  #   retry_on_failure: true
 extensions:
   zpages: {}
 exporters:
@@ -63,20 +55,31 @@ exporters:
       queue_size: 100
       num_consumers: 5
   signozclickhousemetrics:
-    dsn: tcp://clickhouse:9000/signoz_metrics
-  prometheus:
-    endpoint: "0.0.0.0:8889"
+    dsn: tcp://localhost:9000/signoz_metrics
+  clickhouselogsexporter:
+    dsn: tcp://localhost:9000
+    timeout: 10s
+    sending_queue:
+      enabled: true
+      queue_size: 100
+      num_consumers: 5
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 service:
   extensions: [zpages]
   pipelines:
     traces:
-      receivers: [jaeger, otlp]
-      processors: [signozspanmetrics/prometheus, batch]
+      receivers: [otlp]
+      processors: [signozspanmetrics/delta, batch]
       exporters: [clickhousetraces]
     metrics:
       receivers: [otlp, hostmetrics]
       processors: [batch]
       exporters: [signozclickhousemetrics]
-    metrics/spanmetrics:
-      receivers: [otlp/spanmetrics]
-      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [clickhouselogsexporter]

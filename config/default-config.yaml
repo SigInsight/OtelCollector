@@ -1,16 +1,8 @@
 receivers:
-  otlp/spanmetrics:
-    protocols:
-      grpc:
-        endpoint: "localhost:12345"
   otlp:
     protocols:
       grpc:
       http:
-  jaeger:
-    protocols:
-      grpc:
-      thrift_http:
   hostmetrics:
     collection_interval: 30s
     scrapers:
@@ -24,15 +16,6 @@ processors:
   batch:
     send_batch_size: 1000
     timeout: 10s
-  signozspanmetrics/prometheus:
-    metrics_exporter: prometheus
-    latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s ]
-    dimensions_cache_size: 10000
-    dimensions:
-      - name: service.namespace
-        default: default
-      - name: deployment.environment
-        default: default
   signozspanmetrics/delta:
     metrics_exporter: signozclickhousemetrics
     metrics_flush_interval: 60s
@@ -46,9 +29,9 @@ processors:
         default: default
       - name: deployment.environment
         default: default
-      # This is added to ensure the uniqueness of the timeseries
-      # Otherwise, identical timeseries produced by multiple replicas of
-      # collectors result in incorrect APM metrics
+      # Added to ensure uniqueness of the timeseries across collector replicas:
+      # without this, identical timeseries produced by multiple replicas would
+      # collide and produce incorrect APM metrics.
       - name: signoz.collector.id
       - name: service.version
       - name: browser.platform
@@ -72,10 +55,6 @@ processors:
   #   limit_percentage: 50
   #   # 20% of max memory usage spike expected
   #   spike_limit_percentage: 20
-  # queued_retry:
-  #   num_workers: 4
-  #   queue_size: 100
-  #   retry_on_failure: true
 extensions:
   zpages: {}
 exporters:
@@ -100,13 +79,11 @@ exporters:
     sending_queue:
       enabled: false
     use_new_schema: true
-  prometheus:
-    endpoint: "0.0.0.0:8889"
 service:
   extensions: [zpages]
   pipelines:
     traces:
-      receivers: [jaeger, otlp]
+      receivers: [otlp]
       processors: [signozspanmetrics/delta, batch]
       exporters: [clickhousetraces]
     metrics:
@@ -117,6 +94,3 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [clickhouselogsexporter]
-    metrics/spanmetrics:
-      receivers: [otlp/spanmetrics]
-      exporters: [prometheus]
