@@ -6,13 +6,14 @@ on:
     branches:
       - main
 
-defaults:
-  run:
-    shell: bash
+permissions:
+  contents: read
+  packages: write   # required to push images to GHCR
 
 env:
-  PRIMUS_HOME: .primus
-  MAKE: make --no-print-directory --makefile=.primus/src/make/main.mk
+  GO_VERSION: "1.24"
+  DOCKER_BASE_IMAGE: debian:bookworm-slim
+  REGISTRY: ghcr.io
 
 jobs:
   prepare:
@@ -21,73 +22,119 @@ jobs:
     outputs:
       version: ${{ steps.build-info.outputs.version }}
       deployment: ${{ steps.build-info.outputs.deployment }}
+      debian_sha: ${{ steps.debian.outputs.sha }}
+      owner_lc: ${{ steps.owner.outputs.lc }}
     steps:
-      - name: self-checkout
-        uses: actions/checkout@v4
-      - id: token
-        name: github-token-gen
-        uses: actions/create-github-app-token@v1
+      - uses: actions/checkout@v4
         with:
-          app-id: ${{ secrets.NP_PRIMUS_APP_ID }}
-          private-key: ${{ secrets.NP_PRIMUS_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-      - name: primus-checkout
-        uses: actions/checkout@v4
-        with:
-          repository: signoz/primus
-          ref: main
-          path: .primus
-          token: ${{ steps.token.outputs.token }}
+          fetch-depth: 0
       - name: build-info
         id: build-info
         run: |
           staging_label="${{ github.event.label.name }}"
           if [[ "${staging_label}" == "staging:"* ]]; then
-              deployment=${staging_label#"staging:"}
+              deployment="${staging_label#staging:}"
           elif [[ "${{ github.event.ref }}" == "refs/heads/main" ]]; then
               deployment="staging"
           else
               echo "error: not able to determine deployment. Please make sure the workflow is triggered by a PR labeled with 'staging:<deployment>' or by a push to 'main'"
               exit 1
           fi
-          echo "version=$($MAKE info-version)" >> $GITHUB_OUTPUT
+
+          # Compute a version derived from git: <latest-tag>-<commits-ahead>-<sha>
+          # Falls back to the short sha when no tag is reachable.
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            version="$(git describe --tags --always --dirty)"
+          else
+            version="$(git rev-parse --short HEAD)"
+          fi
+
+          echo "version=${version}" >> $GITHUB_OUTPUT
           echo "deployment=${deployment}" >> $GITHUB_OUTPUT
+      - name: owner-lowercase
+        id: owner
+        run: |
+          # GHCR requires the repository owner segment to be lowercase.
+          echo "lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+      - name: resolve-debian-sha
+        id: debian
+        run: |
+          sha=$(docker buildx imagetools inspect "${DOCKER_BASE_IMAGE}" \
+            --format '{{json .Manifest.Digest}}' | tr -d '"' | sed 's/^sha256://')
+          echo "sha=${sha}" >> $GITHUB_OUTPUT
+
   signoz-otel-collector:
-    uses: signoz/primus.workflows/.github/workflows/go-build.yaml@main
-    secrets: inherit
     needs: prepare
-    with:
-      PRIMUS_REF: main
-      GO_VERSION: 1.24
-      GO_BUILD_CONTEXT: ./cmd/signozotelcollector
-      GO_BUILD_FLAGS: ""
-      DOCKER_BASE_IMAGES: '{"debian":"debian:bookworm-slim"}'
-      DOCKER_DOCKERFILE_PATH: ./cmd/signozotelcollector/Dockerfile.multi-arch
-      DOCKER_MANIFEST: true
-      DOCKER_PROVIDERS: gcp
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: build-binaries
+        run: |
+          mkdir -p target/linux-amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -o target/linux-amd64/signoz-otel-collector ./cmd/signozotelcollector
+      - uses: docker/setup-buildx-action@v3
+      - name: ghcr-login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cmd/signozotelcollector/Dockerfile.multi-arch
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/signoz-otel-collector:staging-${{ needs.prepare.outputs.version }}
+          build-args: |
+            DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
+            OS=linux
+
   signoz-schema-migrator:
-    uses: signoz/primus.workflows/.github/workflows/go-build.yaml@main
-    secrets: inherit
     needs: prepare
-    with:
-      PRIMUS_REF: main
-      GO_VERSION: 1.24
-      GO_NAME: signoz-schema-migrator
-      GO_BUILD_CONTEXT: ./cmd/signozschemamigrator
-      GO_BUILD_FLAGS: ""
-      DOCKER_BASE_IMAGES: '{"debian":"debian:bookworm-slim"}'
-      DOCKER_DOCKERFILE_PATH: ./cmd/signozschemamigrator/Dockerfile.multi-arch
-      DOCKER_MANIFEST: true
-      DOCKER_PROVIDERS: gcp
-  staging:
-    if: ${{ contains(github.event.label.name, 'staging:') || github.event.ref == 'refs/heads/main' }}
-    uses: signoz/primus.workflows/.github/workflows/github-trigger.yaml@main
-    secrets: inherit
-    needs: [prepare, signoz-otel-collector, signoz-schema-migrator]
-    with:
-      PRIMUS_REF: main
-      GITHUB_ENVIRONMENT: staging
-      GITHUB_SILENT: true
-      GITHUB_REPOSITORY_NAME: charts-saas-v3-staging
-      GITHUB_EVENT_NAME: releaser
-      GITHUB_EVENT_PAYLOAD: "{\"deployment\": \"${{ needs.prepare.outputs.deployment }}\", \"otelcol_version\": \"${{ needs.prepare.outputs.version }}\"}"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: build-binaries
+        run: |
+          mkdir -p target/linux-amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -o target/linux-amd64/signoz-schema-migrator ./cmd/signozschemamigrator
+      - uses: docker/setup-buildx-action@v3
+      - name: ghcr-login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cmd/signozschemamigrator/Dockerfile.multi-arch
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/signoz-schema-migrator:staging-${{ needs.prepare.outputs.version }}
+          build-args: |
+            DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
+            OS=linux
+
+  # NOTE: the original pipeline also triggered a downstream `releaser` event in
+  # `charts-saas-v3-staging` via signoz/primus.workflows. That step required
+  # the SigNoz GitHub App tokens which are not available outside SigNoz, so it
+  # has been intentionally omitted in this fork. Re-add it here if you set up
+  # equivalent credentials.

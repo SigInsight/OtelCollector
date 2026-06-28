@@ -4,44 +4,146 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read
+  packages: write   # required to push images to GHCR
+
+env:
+  GO_VERSION: "1.24"
+  DOCKER_BASE_IMAGE: debian:bookworm-slim
+  REGISTRY: ghcr.io
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      docker_providers: ${{ steps.set-docker-providers.outputs.providers }}
+      version: ${{ steps.version.outputs.version }}
+      debian_sha: ${{ steps.debian.outputs.sha }}
+      push: ${{ steps.providers.outputs.push }}
+      tag_latest: ${{ steps.providers.outputs.tag_latest }}
+      owner_lc: ${{ steps.owner.outputs.lc }}
     steps:
-      - name: set-docker-providers
-        id: set-docker-providers
+      - name: resolve-version
+        id: version
         run: |
-          if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ || ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
-            echo "providers=dockerhub gcp" >> $GITHUB_OUTPUT
+          version="${GITHUB_REF#refs/tags/}"
+          echo "version=${version}" >> $GITHUB_OUTPUT
+      - name: providers
+        id: providers
+        run: |
+          # Stable release (vX.Y.Z) and RC (vX.Y.Z-rc.N) push to GHCR.
+          # Only stable releases get the :latest tag.
+          ref="${GITHUB_REF}"
+          if [[ "${ref}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "push=true" >> $GITHUB_OUTPUT
+            echo "tag_latest=true" >> $GITHUB_OUTPUT
+          elif [[ "${ref}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            echo "push=true" >> $GITHUB_OUTPUT
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
           else
-            echo "providers=gcp" >> $GITHUB_OUTPUT
+            echo "push=false" >> $GITHUB_OUTPUT
+            echo "tag_latest=false" >> $GITHUB_OUTPUT
           fi
+      - name: owner-lowercase
+        id: owner
+        run: |
+          # GHCR requires the repository owner segment to be lowercase.
+          echo "lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+      - name: resolve-debian-sha
+        id: debian
+        run: |
+          # Resolve the digest of debian:bookworm-slim so the build pins to an
+          # immutable image, matching the behaviour of the original primus workflow.
+          sha=$(docker buildx imagetools inspect "${DOCKER_BASE_IMAGE}" \
+            --format '{{json .Manifest.Digest}}' | tr -d '"' | sed 's/^sha256://')
+          echo "sha=${sha}" >> $GITHUB_OUTPUT
+
   signoz-otel-collector:
-    uses: signoz/primus.workflows/.github/workflows/go-build.yaml@main
-    secrets: inherit
     needs: prepare
-    with:
-      PRIMUS_REF: main
-      GO_VERSION: 1.24
-      GO_BUILD_CONTEXT: ./cmd/signozotelcollector
-      GO_BUILD_FLAGS: ""
-      DOCKER_BASE_IMAGES: '{"debian":"debian:bookworm-slim"}'
-      DOCKER_DOCKERFILE_PATH: ./cmd/signozotelcollector/Dockerfile.multi-arch
-      DOCKER_MANIFEST: true
-      DOCKER_PROVIDERS: ${{ needs.prepare.outputs.docker_providers }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: build-binaries
+        run: |
+          mkdir -p target/linux-amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -o target/linux-amd64/signoz-otel-collector ./cmd/signozotelcollector
+      - uses: docker/setup-buildx-action@v3
+      - name: ghcr-login
+        if: needs.prepare.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: image-tags
+        id: tags
+        run: |
+          base="${REGISTRY}/${{ needs.prepare.outputs.owner_lc }}/signoz-otel-collector"
+          tags="${base}:${{ needs.prepare.outputs.version }}"
+          if [[ "${{ needs.prepare.outputs.tag_latest }}" == "true" ]]; then
+            tags="${tags},${base}:latest"
+          fi
+          echo "tags=${tags}" >> $GITHUB_OUTPUT
+      - name: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cmd/signozotelcollector/Dockerfile.multi-arch
+          platforms: linux/amd64
+          push: ${{ needs.prepare.outputs.push == 'true' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
+            OS=linux
+
   signoz-schema-migrator:
-    uses: signoz/primus.workflows/.github/workflows/go-build.yaml@main
-    secrets: inherit
     needs: prepare
-    with:
-      PRIMUS_REF: main
-      GO_VERSION: 1.24
-      GO_NAME: signoz-schema-migrator
-      GO_BUILD_CONTEXT: ./cmd/signozschemamigrator
-      GO_BUILD_FLAGS: ""
-      DOCKER_BASE_IMAGES: '{"debian":"debian:bookworm-slim"}'
-      DOCKER_DOCKERFILE_PATH: ./cmd/signozschemamigrator/Dockerfile.multi-arch
-      DOCKER_MANIFEST: true
-      DOCKER_PROVIDERS: ${{ needs.prepare.outputs.docker_providers }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: build-binaries
+        run: |
+          mkdir -p target/linux-amd64
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+            go build -o target/linux-amd64/signoz-schema-migrator ./cmd/signozschemamigrator
+      - uses: docker/setup-buildx-action@v3
+      - name: ghcr-login
+        if: needs.prepare.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: image-tags
+        id: tags
+        run: |
+          base="${REGISTRY}/${{ needs.prepare.outputs.owner_lc }}/signoz-schema-migrator"
+          tags="${base}:${{ needs.prepare.outputs.version }}"
+          if [[ "${{ needs.prepare.outputs.tag_latest }}" == "true" ]]; then
+            tags="${tags},${base}:latest"
+          fi
+          echo "tags=${tags}" >> $GITHUB_OUTPUT
+      - name: build-and-push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./cmd/signozschemamigrator/Dockerfile.multi-arch
+          platforms: linux/amd64
+          push: ${{ needs.prepare.outputs.push == 'true' }}
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
+            OS=linux

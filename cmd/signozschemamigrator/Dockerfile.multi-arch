@@ -3,8 +3,10 @@ ARG DEBIAN_SHA="pass-a-valid-docker-sha-otherwise-this-will-fail"
 FROM debian@sha256:${DEBIAN_SHA}
 LABEL maintainer="signoz"
 
+# TARGETARCH is automatically populated by buildx when using --platform.
+ARG TARGETARCH
 ARG OS="linux"
-ARG ARCH
+ARG ARCH=${TARGETARCH}
 ARG USER_UID=10001
 # Configurable Debian apt mirror; see cmd/signozotelcollector/Dockerfile.
 ARG APT_MIRROR=mirrors.aliyun.com
