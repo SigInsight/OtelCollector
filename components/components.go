@@ -108,9 +108,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/envoyalsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/expvarreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/gitlabreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/googlecloudmonitoringreceiver"
@@ -122,17 +120,12 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/huaweicloudcesreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/icmpcheckreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/journaldreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8slogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sobjectsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkametricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/lokireceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/macosunifiedloggingreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/namedpipereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/netflowreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nsxtreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ntpreceiver"
@@ -151,14 +144,10 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/snmpreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/solacereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sshcheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/systemdreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcpcheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tlscheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/udplogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/webhookeventreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowseventlogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowsperfcountersreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowsservicereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/yanggrpcreceiver"
@@ -202,9 +191,7 @@ func Components() (otelcol.Factories, error) {
 		cloudfoundryreceiver.NewFactory(),
 		dockerstatsreceiver.NewFactory(),
 		expvarreceiver.NewFactory(),
-		filelogreceiver.NewFactory(),
 		filestatsreceiver.NewFactory(),
-		fluentforwardreceiver.NewFactory(),
 		githubreceiver.NewFactory(),
 		googlecloudmonitoringreceiver.NewFactory(),
 		googlecloudpubsubreceiver.NewFactory(),
@@ -213,15 +200,12 @@ func Components() (otelcol.Factories, error) {
 		httpcheckreceiver.NewFactory(),
 		httplogreceiver.NewFactory(),
 		jmxreceiver.NewFactory(),
-		journaldreceiver.NewFactory(),
 		k8sclusterreceiver.NewFactory(),
 		k8seventsreceiver.NewFactory(),
 		k8sobjectsreceiver.NewFactory(),
 		kafkametricsreceiver.NewFactory(),
 		kafkareceiver.NewFactory(),
 		kubeletstatsreceiver.NewFactory(),
-		lokireceiver.NewFactory(),
-		namedpipereceiver.NewFactory(),
 		nsxtreceiver.NewFactory(),
 		osqueryreceiver.NewFactory(),
 		otelarrowreceiver.NewFactory(),
@@ -236,11 +220,7 @@ func Components() (otelcol.Factories, error) {
 		snmpreceiver.NewFactory(),
 		solacereceiver.NewFactory(),
 		sshcheckreceiver.NewFactory(),
-		syslogreceiver.NewFactory(),
-		tcplogreceiver.NewFactory(),
-		udplogreceiver.NewFactory(),
 		webhookeventreceiver.NewFactory(),
-		windowseventlogreceiver.NewFactory(),
 		windowsperfcountersreceiver.NewFactory(),
 		ciscoosreceiver.NewFactory(),
 		envoyalsreceiver.NewFactory(),
@@ -248,8 +228,6 @@ func Components() (otelcol.Factories, error) {
 		googlecloudpubsubpushreceiver.NewFactory(),
 		huaweicloudcesreceiver.NewFactory(),
 		icmpcheckreceiver.NewFactory(),
-		k8slogreceiver.NewFactory(),
-		macosunifiedloggingreceiver.NewFactory(),
 		netflowreceiver.NewFactory(),
 		ntpreceiver.NewFactory(),
 		pprofreceiver.NewFactory(),
