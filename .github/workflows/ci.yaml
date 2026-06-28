@@ -56,8 +56,10 @@ jobs:
       # The official action keeps its own analysis cache under
       # ~/.cache/golangci-lint, so reruns only re-check changed packages.
       # Version + config are taken from the Makefile / .golangci.yml.
+      # NOTE: golangci-lint v2 requires golangci-lint-action v7 or newer
+      # (v6 only supports golangci-lint v1).
       - name: lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.6.0
           args: --timeout=10m

@@ -146,9 +146,9 @@ func TestAnalyzePValue_EndToEndTypes(t *testing.T) {
 			name: "simple_datatype_test",
 			input: map[string]any{
 				"string": "hello",
-				"int": 123,
-				"float": 123.456,
-				"bool": true,
+				"int":    123,
+				"float":  123.456,
+				"bool":   true,
 			},
 			config: &Config{
 				MaxDepthTraverse:        utils.ToPointer(2),
@@ -156,13 +156,13 @@ func TestAnalyzePValue_EndToEndTypes(t *testing.T) {
 			},
 			expected: map[string][]string{
 				"string": {String},
-				"int": {Int64},
-				"float": {Float64},
-				"bool": {Bool},
+				"int":    {Int64},
+				"float":  {Float64},
+				"bool":   {Bool},
 			},
 		},
 		{
-			name: "full_test",
+			name:  "full_test",
 			input: input,
 			config: &Config{
 				MaxDepthTraverse:        utils.ToPointer(100),
@@ -217,7 +217,7 @@ func TestAnalyzePValue_EndToEndTypes(t *testing.T) {
 			},
 		},
 		{
-			name: "max_depth_traverse_test",
+			name:  "max_depth_traverse_test",
 			input: input,
 			config: &Config{
 				MaxDepthTraverse:        utils.ToPointer(2),
