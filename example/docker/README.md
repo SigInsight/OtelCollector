@@ -17,10 +17,10 @@ example/docker/
         └── otel-collector-opamp-config.yaml
 ```
 
-`common/` mirrors the layout used by the upstream SigNoz docker repo. The
-config files there are NOT included in this fork; copy them from
+The `common/` tree is a copy of the upstream
 [`SigNoz/signoz/deploy/docker/common`](https://github.com/SigNoz/signoz/tree/main/deploy/docker/common)
-before bringing the stack up.
+directory and is committed as-is for convenience. Update it when the
+upstream stack changes if you want to track new defaults.
 
 ## Quick start
 
