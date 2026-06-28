@@ -91,13 +91,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/unrollprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscloudwatchmetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscloudwatchreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awscontainerinsightreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awsecscontainermetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awsfirehosereceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awss3receiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/awsxrayreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azureblobreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azureeventhubreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azuremonitorreceiver"
@@ -170,13 +163,6 @@ func Components() (otelcol.Factories, error) {
 	extensions := []extension.Factory{}
 
 	receivers := []receiver.Factory{
-		awscloudwatchmetricsreceiver.NewFactory(),
-		awscloudwatchreceiver.NewFactory(),
-		awscontainerinsightreceiver.NewFactory(),
-		awsecscontainermetricsreceiver.NewFactory(),
-		awsfirehosereceiver.NewFactory(),
-		awss3receiver.NewFactory(),
-		awsxrayreceiver.NewFactory(),
 		azureblobreceiver.NewFactory(),
 		azureeventhubreceiver.NewFactory(),
 		azuremonitorreceiver.NewFactory(),
