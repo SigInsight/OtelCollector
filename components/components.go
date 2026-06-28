@@ -91,26 +91,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/unrollprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azureblobreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azureeventhubreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/azuremonitorreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/chronyreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ciscoosreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/cloudflarereceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/cloudfoundryreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/envoyalsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/expvarreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filestatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/githubreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/gitlabreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/googlecloudmonitoringreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/googlecloudpubsubpushreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/googlecloudpubsubreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/googlecloudspannerreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/httpcheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/huaweicloudcesreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/icmpcheckreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
@@ -163,20 +153,12 @@ func Components() (otelcol.Factories, error) {
 	extensions := []extension.Factory{}
 
 	receivers := []receiver.Factory{
-		azureblobreceiver.NewFactory(),
-		azureeventhubreceiver.NewFactory(),
-		azuremonitorreceiver.NewFactory(),
 		chronyreceiver.NewFactory(),
 		clickhousesystemtablesreceiver.NewFactory(),
-		cloudflarereceiver.NewFactory(),
-		cloudfoundryreceiver.NewFactory(),
 		dockerstatsreceiver.NewFactory(),
 		expvarreceiver.NewFactory(),
 		filestatsreceiver.NewFactory(),
 		githubreceiver.NewFactory(),
-		googlecloudmonitoringreceiver.NewFactory(),
-		googlecloudpubsubreceiver.NewFactory(),
-		googlecloudspannerreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		httpcheckreceiver.NewFactory(),
 		httplogreceiver.NewFactory(),
@@ -201,8 +183,6 @@ func Components() (otelcol.Factories, error) {
 		ciscoosreceiver.NewFactory(),
 		envoyalsreceiver.NewFactory(),
 		gitlabreceiver.NewFactory(),
-		googlecloudpubsubpushreceiver.NewFactory(),
-		huaweicloudcesreceiver.NewFactory(),
 		icmpcheckreceiver.NewFactory(),
 		netflowreceiver.NewFactory(),
 		ntpreceiver.NewFactory(),
