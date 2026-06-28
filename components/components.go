@@ -136,19 +136,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/libhoneyreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/lokireceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/macosunifiedloggingreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mongodbatlasreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/mysqlreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/namedpipereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/netflowreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nsxtreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/ntpreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/oracledbreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/osqueryreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/otelarrowreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/otlpjsonfilereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/postgresqlreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/pprofreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusremotewritereceiver"
@@ -158,21 +153,14 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/rabbitmqreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/redfishreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/redisreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/riakreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/saphanareceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/signalfxreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/skywalkingreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/snmpreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/snowflakereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/solacereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/splunkenterprisereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/splunkhecreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sqlqueryreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sqlserverreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/sshcheckreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/statsdreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/stefreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/systemdreceiver"
@@ -180,7 +168,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tcplogreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/tlscheckreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/udplogreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/vcenterreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/wavefrontreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/webhookeventreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowseventlogreceiver"
@@ -188,7 +175,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/windowsservicereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/yanggrpcreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zookeeperreceiver"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/connector/forwardconnector"
 	"go.opentelemetry.io/collector/exporter"
@@ -250,17 +236,12 @@ func Components() (otelcol.Factories, error) {
 		kafkareceiver.NewFactory(),
 		kubeletstatsreceiver.NewFactory(),
 		lokireceiver.NewFactory(),
-		mongodbatlasreceiver.NewFactory(),
-		mysqlreceiver.NewFactory(),
 		namedpipereceiver.NewFactory(),
-		nginxreceiver.NewFactory(),
 		nsxtreceiver.NewFactory(),
-		oracledbreceiver.NewFactory(),
 		osqueryreceiver.NewFactory(),
 		otelarrowreceiver.NewFactory(),
 		otlpjsonfilereceiver.NewFactory(),
 		podmanreceiver.NewFactory(),
-		postgresqlreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
 		prometheusremotewritereceiver.NewFactory(),
 		pulsarreceiver.NewFactory(),
@@ -268,31 +249,22 @@ func Components() (otelcol.Factories, error) {
 		purefbreceiver.NewFactory(),
 		rabbitmqreceiver.NewFactory(),
 		receivercreator.NewFactory(),
-		redisreceiver.NewFactory(),
-		riakreceiver.NewFactory(),
-		saphanareceiver.NewFactory(),
 		signalfxreceiver.NewFactory(),
 		simpleprometheusreceiver.NewFactory(),
 		skywalkingreceiver.NewFactory(),
 		snmpreceiver.NewFactory(),
-		snowflakereceiver.NewFactory(),
 		solacereceiver.NewFactory(),
 		splunkenterprisereceiver.NewFactory(),
 		splunkhecreceiver.NewFactory(),
-		sqlqueryreceiver.NewFactory(),
-		sqlserverreceiver.NewFactory(),
 		sshcheckreceiver.NewFactory(),
-		statsdreceiver.NewFactory(),
 		syslogreceiver.NewFactory(),
 		tcplogreceiver.NewFactory(),
 		udplogreceiver.NewFactory(),
-		vcenterreceiver.NewFactory(),
 		wavefrontreceiver.NewFactory(),
 		webhookeventreceiver.NewFactory(),
 		windowseventlogreceiver.NewFactory(),
 		windowsperfcountersreceiver.NewFactory(),
 		zipkinreceiver.NewFactory(),
-		zookeeperreceiver.NewFactory(),
 		ciscoosreceiver.NewFactory(),
 		envoyalsreceiver.NewFactory(),
 		faroreceiver.NewFactory(),
