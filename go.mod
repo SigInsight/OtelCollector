@@ -65,9 +65,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/zipkin v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/coralogixprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/datadogsemanticsprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/dnslookupprocessor v0.144.0
@@ -75,8 +73,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/geoipprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/intervalprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/isolationforestprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/logstransformprocessor v0.144.0
@@ -85,15 +81,11 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/unrollprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver v0.144.0
@@ -216,7 +208,6 @@ require (
 	github.com/DataDog/sketches-go v1.4.7 // indirect
 	github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.30.0 // indirect
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Showmax/go-fqdn v1.0.0 // indirect
 	github.com/alecthomas/participle/v2 v2.1.4 // indirect
@@ -465,7 +456,6 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.39.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.39.0 // indirect
 	go.opentelemetry.io/otel/log v0.15.0 // indirect
-	go.opentelemetry.io/otel/schema v0.0.14 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.14.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect

@@ -47,9 +47,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/coralogixprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/cumulativetodeltaprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/datadogsemanticsprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatocumulativeprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/deltatorateprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/dnslookupprocessor"
@@ -57,8 +55,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/geoipprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/intervalprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/isolationforestprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/logstransformprocessor"
@@ -67,15 +63,11 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/redactionprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/remotetapprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/schemaprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/sumologicprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/unrollprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver"
@@ -148,8 +140,6 @@ func Components() (otelcol.Factories, error) {
 	processors := []processor.Factory{
 		attributesprocessor.NewFactory(),
 		cumulativetodeltaprocessor.NewFactory(),
-		coralogixprocessor.NewFactory(),
-		datadogsemanticsprocessor.NewFactory(),
 		deltatorateprocessor.NewFactory(),
 		deltatocumulativeprocessor.NewFactory(),
 		dnslookupprocessor.NewFactory(),
@@ -157,8 +147,6 @@ func Components() (otelcol.Factories, error) {
 		geoipprocessor.NewFactory(),
 		groupbyattrsprocessor.NewFactory(),
 		groupbytraceprocessor.NewFactory(),
-		intervalprocessor.NewFactory(),
-		isolationforestprocessor.NewFactory(),
 		k8sattributesprocessor.NewFactory(),
 		logdedupprocessor.NewFactory(),
 		logstransformprocessor.NewFactory(),
@@ -167,16 +155,12 @@ func Components() (otelcol.Factories, error) {
 		metricstarttimeprocessor.NewFactory(),
 		probabilisticsamplerprocessor.NewFactory(),
 		redactionprocessor.NewFactory(),
-		remotetapprocessor.NewFactory(),
 		resourcedetectionprocessor.NewFactory(),
 		resourceprocessor.NewFactory(),
-		schemaprocessor.NewFactory(),
-		sumologicprocessor.NewFactory(),
 		signozspanmetricsprocessor.NewFactory(),
 		spanprocessor.NewFactory(),
 		tailsamplingprocessor.NewFactory(),
 		transformprocessor.NewFactory(),
-		unrollprocessor.NewFactory(),
 		signoztailsampler.NewFactory(),
 		signoztransformprocessor.NewFactory(),
 		signozlogspipelineprocessor.NewFactory(),
