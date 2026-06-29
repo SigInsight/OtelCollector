@@ -30,8 +30,6 @@ linters:
         linters:
           - unparam
           - unconvert
-      - path: "_test\\.go$"
-        linters: []
 
 issues:
   max-issues-per-linter: 0
