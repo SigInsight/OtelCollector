@@ -99,9 +99,13 @@ jobs:
           platforms: linux/amd64
           push: ${{ needs.prepare.outputs.push == 'true' }}
           tags: ${{ steps.tags.outputs.tags }}
+          # APT_MIRROR override: Dockerfile.multi-arch defaults to
+          # mirrors.aliyun.com for in-region builds. GitHub-hosted runners
+          # are outside CN, so route apt back through deb.debian.org here.
           build-args: |
             DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
             OS=linux
+            APT_MIRROR=deb.debian.org
 
   signoz-schema-migrator:
     needs: prepare
@@ -147,3 +151,4 @@ jobs:
           build-args: |
             DEBIAN_SHA=${{ needs.prepare.outputs.debian_sha }}
             OS=linux
+            APT_MIRROR=deb.debian.org
