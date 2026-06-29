@@ -773,8 +773,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.144.0/go.mod h1:mi++4izkbdpgEjaxdTlSNvJ68+b7yY3w/bGnuPuw0Do=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.144.0 h1:zH21R7Y2SnE3BJ2lMMP8C39WRnGzFmO/AbGZKitrmBM=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.144.0/go.mod h1:b4B3z8qYDb1hVIrigzL07qKfNsRHbQuZHxAXczDzG+U=
-github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchpersignal v0.144.0 h1:hGY/mFyJ5MKFNZmjv9rg4PAcb08Su1MbwgqqeSufBgc=
-github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchpersignal v0.144.0/go.mod h1:wO9872StJyUjOXWH76IlUI5C4uOGuhb5w0CzYUnrZCI=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/core/xidutils v0.144.0 h1:xFFQHqPzL+/jt8dQVWZ62e2JQAJtTMED8Rv/7CQDaIE=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/core/xidutils v0.144.0/go.mod h1:s8sq9iwi/sNcG6gCpLl59B8GBwzMLkrtl80GIrmntTk=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/experimentalmetricmetadata v0.144.0 h1:amtJdjNrbXaJLp30PVndeKSSNWd7VyTq/OHzNK0PYj8=
@@ -819,8 +817,6 @@ github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterproces
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.144.0/go.mod h1:8j0rg5f74vgGuuxyFNcEP4tHFRb2oIUkilDhEAU+ZM0=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.144.0 h1:SeEL3udlizvSB+jw6nLPW6mRhrLXgJNXjQGrk1wttTw=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.144.0/go.mod h1:Gk05zrXXb+lypcrs48uUvmxp6szj+oiEyOtg4omnN2U=
-github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.144.0 h1:les39ei9HUdiyu28zG/nTNEeixJm298aH7xE+E3jjLc=
-github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.144.0/go.mod h1:DH8hxyKkKq9urVT/XdAZyMa3i9PEUN/oilXp8WELoSY=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.144.0 h1:+zvt5Q9ke4E+xrqyevkvleuCMhY//zHF2HL8g+2kKdo=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/k8sattributesprocessor v0.144.0/go.mod h1:58/USMlnsrss6qG+JoMUMTL1YpSPUeiYizWM8I9aIKs=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/logdedupprocessor v0.144.0 h1:RRPm4QKaQPdmHU5RZeCYT6GB0OmP/JjqV6AbenMAVSg=
