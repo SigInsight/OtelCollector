@@ -60,20 +60,13 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/spanprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/dockerstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jmxreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sobjectsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nsxtreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/otlpjsonfilereceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/podmanreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusremotewritereceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/simpleprometheusreceiver"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/connector/forwardconnector"
 	"go.opentelemetry.io/collector/exporter"
@@ -99,21 +92,14 @@ func Components() (otelcol.Factories, error) {
 
 	receivers := []receiver.Factory{
 		clickhousesystemtablesreceiver.NewFactory(),
-		dockerstatsreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
 		httplogreceiver.NewFactory(),
-		jmxreceiver.NewFactory(),
 		k8sclusterreceiver.NewFactory(),
 		k8seventsreceiver.NewFactory(),
-		k8sobjectsreceiver.NewFactory(),
 		kubeletstatsreceiver.NewFactory(),
-		nsxtreceiver.NewFactory(),
-		otlpjsonfilereceiver.NewFactory(),
-		podmanreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
 		prometheusremotewritereceiver.NewFactory(),
 		receivercreator.NewFactory(),
-		simpleprometheusreceiver.NewFactory(),
 		signozkafkareceiver.NewFactory(),
 		signozawsfirehosereceiver.NewFactory(),
 	}
