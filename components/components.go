@@ -18,13 +18,10 @@ import (
 	"github.com/SigNoz/signoz-otel-collector/receiver/httplogreceiver"
 	"github.com/SigNoz/signoz-otel-collector/receiver/signozawsfirehosereceiver"
 	"github.com/SigNoz/signoz-otel-collector/receiver/signozkafkareceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/countconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/roundrobinconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/servicegraphconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/signaltometricsconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/spanmetricsconnector"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/connector/sumconnector"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
@@ -137,14 +134,11 @@ func Components() (otelcol.Factories, error) {
 	}
 
 	connectors := []connector.Factory{
-		countconnector.NewFactory(),
 		forwardconnector.NewFactory(),
-		roundrobinconnector.NewFactory(),
 		routingconnector.NewFactory(),
 		servicegraphconnector.NewFactory(),
 		signaltometricsconnector.NewFactory(),
 		spanmetricsconnector.NewFactory(),
-		sumconnector.NewFactory(),
 		signozmeterconnector.NewFactory(),
 	}
 
