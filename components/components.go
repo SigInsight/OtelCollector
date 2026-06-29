@@ -25,10 +25,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
@@ -173,8 +171,6 @@ func CoreComponents(
 		filestorage.NewFactory(),
 		hostobserver.NewFactory(),
 		k8sobserver.NewFactory(),
-		oauth2clientauthextension.NewFactory(),
-		oidcauthextension.NewFactory(),
 		healthcheckextension.NewFactory(),
 		pprofextension.NewFactory(),
 		signozhealthcheckextension.NewFactory(),

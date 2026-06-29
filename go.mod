@@ -37,10 +37,8 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oauth2clientauthextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/hostobserver v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/observer/k8sobserver v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/extension/oidcauthextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.144.0
@@ -197,7 +195,6 @@ require (
 	github.com/cncf/xds/go v0.0.0-20251022180443-0feb69152e9f // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/coreos/go-oidc/v3 v3.17.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.6.0 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
@@ -219,7 +216,6 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
 	github.com/go-faster/errors v0.7.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
 	github.com/go-openapi/analysis v0.24.1 // indirect
 	github.com/go-openapi/errors v0.22.4 // indirect
 	github.com/go-openapi/jsonpointer v0.22.1 // indirect
