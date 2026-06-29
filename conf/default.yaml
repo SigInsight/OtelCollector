@@ -1,85 +1,123 @@
+# Default collector configuration baked into the Docker image at
+# /etc/otel/config.yaml. This mirrors the canonical config that the SigNoz
+# backend pushes via OpAMP, so a fresh `docker run` without OpAMP behaves the
+# same as one driven by SigNoz.
+#
+# In OpAMP mode (--manager-config + --copy-path) this file is only the bootstrap;
+# the SigNoz backend overrides it at runtime with whatever lives in --copy-path.
+connectors:
+  signozmeter:
+    metrics_flush_interval: 1h
+    dimensions:
+      - name: service.name
+      - name: deployment.environment
+      - name: host.name
+
 receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
-  hostmetrics:
-    collection_interval: 30s
-    scrapers:
-      cpu:
-      load:
-      memory:
-      disk:
-      filesystem:
-      network:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      global:
+        scrape_interval: 60s
+      scrape_configs:
+        - job_name: otel-collector
+          static_configs:
+            - labels:
+                job_name: otel-collector
+              targets:
+                - localhost:8888
+
 processors:
   batch:
-    send_batch_size: 1000
+    send_batch_size: 10000
+    send_batch_max_size: 11000
     timeout: 10s
+  batch/meter:
+    send_batch_size: 20000
+    send_batch_max_size: 25000
+    timeout: 1s
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 2s
   signozspanmetrics/delta:
-    metrics_exporter: signozclickhousemetrics
-    metrics_flush_interval: 60s
-    latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s ]
-    dimensions_cache_size: 100000
     aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
     enable_exp_histogram: true
-    skip_spans_older_than: 24h
+    metrics_exporter: signozclickhousemetrics
+    metrics_flush_interval: 60s
+    dimensions_cache_size: 100000
+    latency_histogram_buckets:
+      [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
     dimensions:
-      - name: service.namespace
-        default: default
-      - name: deployment.environment
-        default: default
-  # memory_limiter:
-  #   # 80% of maximum memory up to 2G
-  #   limit_mib: 1500
-  #   # 25% of limit up to 2G
-  #   spike_limit_mib: 512
-  #   check_interval: 5s
-  #
-  #   # 50% of the maximum memory
-  #   limit_percentage: 50
-  #   # 20% of max memory usage spike expected
-  #   spike_limit_percentage: 20
-extensions:
-  zpages: {}
+      - {name: service.namespace, default: default}
+      - {name: deployment.environment, default: default}
+      - {name: signoz.collector.id}
+      - {name: service.version}
+      - {name: browser.platform}
+      - {name: browser.mobile}
+      - {name: k8s.cluster.name}
+      - {name: k8s.node.name}
+      - {name: k8s.namespace.name}
+      - {name: host.name}
+      - {name: host.type}
+      - {name: container.name}
+
 exporters:
   clickhousetraces:
-    datasource: tcp://localhost:9000/signoz_traces
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 300s
-    sending_queue:
-      enabled: true
-      queue_size: 100
-      num_consumers: 5
+    datasource: tcp://clickhouse:9000/signoz_traces
+    use_new_schema: true
+    low_cardinal_exception_grouping: false
   signozclickhousemetrics:
-    dsn: tcp://localhost:9000/signoz_metrics
+    dsn: tcp://clickhouse:9000/signoz_metrics
   clickhouselogsexporter:
-    dsn: tcp://localhost:9000
+    dsn: tcp://clickhouse:9000/signoz_logs
     timeout: 10s
+    use_new_schema: true
+  signozclickhousemeter:
+    dsn: tcp://clickhouse:9000/signoz_meter
+    timeout: 45s
     sending_queue:
-      enabled: true
-      queue_size: 100
-      num_consumers: 5
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 300s
+      enabled: false
+  metadataexporter:
+    dsn: tcp://clickhouse:9000/signoz_metadata
+    timeout: 45s
+    enabled: true
+    cache:
+      provider: in_memory
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+
 service:
-  extensions: [zpages]
+  extensions: [health_check, pprof]
+  telemetry:
+    logs:
+      encoding: json
   pipelines:
     traces:
       receivers: [otlp]
       processors: [signozspanmetrics/delta, batch]
-      exporters: [clickhousetraces]
+      exporters: [clickhousetraces, metadataexporter, signozmeter]
     metrics:
-      receivers: [otlp, hostmetrics]
+      receivers: [otlp]
       processors: [batch]
-      exporters: [signozclickhousemetrics]
+      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+    metrics/prometheus:
+      receivers: [prometheus]
+      processors: [batch]
+      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+    metrics/meter:
+      receivers: [signozmeter]
+      processors: [batch/meter]
+      exporters: [signozclickhousemeter]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhouselogsexporter]
+      exporters: [clickhouselogsexporter, metadataexporter, signozmeter]
