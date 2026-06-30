@@ -12,9 +12,6 @@ import (
 	"github.com/SigNoz/signoz-otel-collector/processor/signozspanmetricsprocessor"
 	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler"
 	"github.com/SigNoz/signoz-otel-collector/receiver/clickhousesystemtablesreceiver"
-	"github.com/SigNoz/signoz-otel-collector/receiver/httplogreceiver"
-	"github.com/SigNoz/signoz-otel-collector/receiver/signozawsfirehosereceiver"
-	"github.com/SigNoz/signoz-otel-collector/receiver/signozkafkareceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
@@ -24,8 +21,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusremotewritereceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/receivercreator"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/debugexporter"
@@ -49,15 +44,10 @@ func Components() (otelcol.Factories, error) {
 	receivers := []receiver.Factory{
 		clickhousesystemtablesreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
-		httplogreceiver.NewFactory(),
 		k8sclusterreceiver.NewFactory(),
 		k8seventsreceiver.NewFactory(),
 		kubeletstatsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
-		prometheusremotewritereceiver.NewFactory(),
-		receivercreator.NewFactory(),
-		signozkafkareceiver.NewFactory(),
-		signozawsfirehosereceiver.NewFactory(),
 	}
 
 	exporters := []exporter.Factory{
