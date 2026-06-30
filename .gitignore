@@ -17,7 +17,7 @@ vendor/
 .vscode
 .DS_Store
 .idea
-./config/default-config.yaml
+./config/collector.local.yaml
 .config
 
 # build folder

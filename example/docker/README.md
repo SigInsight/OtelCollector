@@ -10,12 +10,18 @@ ClickHouse cluster.
 example/docker/
 ├── docker-compose.yaml            this file's stack definition
 ├── .env.example                   tag overrides (OTELCOL_TAG, VERSION, ...)
-├── otel-collector-config.yaml     receivers/processors/exporters for the collector
 └── common/                        configs mounted into containers
     ├── clickhouse/                config.xml, users.xml, cluster.xml, ...
     └── signoz/
         └── otel-collector-opamp-config.yaml
 ```
+
+The collector's bootstrap config is the repo's canonical
+[`config/collector.yaml`](../../config/collector.yaml), mounted straight into
+the container (see the `otel-collector` volume in `docker-compose.yaml`) — the
+demo does not keep its own copy. Because the collector runs in OpAMP mode
+(`--manager-config` + `--copy-path`), the SigNoz backend overrides this
+bootstrap at runtime anyway.
 
 The `common/` tree is a copy of the upstream
 [`SigNoz/signoz/deploy/docker/common`](https://github.com/SigNoz/signoz/tree/main/deploy/docker/common)

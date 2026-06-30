@@ -19,7 +19,7 @@ RUN sed -i "s|deb.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sou
 USER ${USER_UID}
 
 COPY ./target/${OS}-${ARCH}/signoz-otel-collector /signoz-otel-collector
-COPY conf/default.yaml /etc/otel/config.yaml
+COPY config/collector.yaml /etc/otel/config.yaml
 
 EXPOSE 4317 4318
 

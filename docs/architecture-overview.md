@@ -335,7 +335,7 @@ service.pipelines:
 | 本仓的 collector 包装（提供 Restart 给 OpAMP 用） | [signozcol/](../signozcol/) |
 | 本仓的 reload 协作 | [opamp/server_client.go:301-340](../opamp/server_client.go#L301-L340) |
 | 注册的组件工厂表 | [components/components.go](../components/components.go) |
-| 镜像内置 default config（仅作 OpAMP bootstrap 种子） | [conf/default.yaml](../conf/default.yaml) |
+| 镜像内置 default config（仅作 OpAMP bootstrap 种子） | [config/collector.yaml](../config/collector.yaml) |
 | 守护测试：default config 引用的模块都得在工厂表里 | [components/components_test.go](../components/components_test.go) |
 
 ---

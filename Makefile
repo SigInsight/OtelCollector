@@ -1,7 +1,7 @@
 COMMIT_SHA ?= $(shell git rev-parse HEAD)
 REPONAME ?= signoz
 IMAGE_NAME ?= signoz-otel-collector
-CONFIG_FILE ?= ./config/default-config.yaml
+CONFIG_FILE ?= ./config/collector.local.yaml
 DOCKER_TAG ?= latest
 
 GOOS ?= $(shell go env GOOS)

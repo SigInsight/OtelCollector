@@ -23,8 +23,8 @@ import (
 // config references something `Components()` no longer registers.
 func TestDefaultConfigsLoad(t *testing.T) {
 	cases := []string{
-		"../conf/default.yaml",
-		"../config/default-config.yaml",
+		"../config/collector.yaml",
+		"../config/collector.local.yaml",
 		"../example/example-config.yaml",
 	}
 
