@@ -5,14 +5,6 @@
 #
 # In OpAMP mode (--manager-config + --copy-path) this file is only the bootstrap;
 # the SigNoz backend overrides it at runtime with whatever lives in --copy-path.
-connectors:
-  signozmeter:
-    metrics_flush_interval: 1h
-    dimensions:
-      - name: service.name
-      - name: deployment.environment
-      - name: host.name
-
 receivers:
   otlp:
     protocols:
@@ -37,10 +29,6 @@ processors:
     send_batch_size: 10000
     send_batch_max_size: 11000
     timeout: 10s
-  batch/meter:
-    send_batch_size: 20000
-    send_batch_max_size: 25000
-    timeout: 1s
   resourcedetection:
     detectors: [env, system]
     timeout: 2s
@@ -77,11 +65,6 @@ exporters:
     dsn: tcp://clickhouse:9000/signoz_logs
     timeout: 10s
     use_new_schema: true
-  signozclickhousemeter:
-    dsn: tcp://clickhouse:9000/signoz_meter
-    timeout: 45s
-    sending_queue:
-      enabled: false
   metadataexporter:
     dsn: tcp://clickhouse:9000/signoz_metadata
     timeout: 45s
@@ -104,20 +87,16 @@ service:
     traces:
       receivers: [otlp]
       processors: [signozspanmetrics/delta, batch]
-      exporters: [clickhousetraces, metadataexporter, signozmeter]
+      exporters: [clickhousetraces, metadataexporter]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+      exporters: [signozclickhousemetrics, metadataexporter]
     metrics/prometheus:
       receivers: [prometheus]
       processors: [batch]
-      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
-    metrics/meter:
-      receivers: [signozmeter]
-      processors: [batch/meter]
-      exporters: [signozclickhousemeter]
+      exporters: [signozclickhousemetrics, metadataexporter]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhouselogsexporter, metadataexporter, signozmeter]
+      exporters: [clickhouselogsexporter, metadataexporter]

@@ -1,11 +1,9 @@
 package components
 
 import (
-	"github.com/SigNoz/signoz-otel-collector/connectors/signozmeterconnector"
 	"github.com/SigNoz/signoz-otel-collector/exporter/clickhouselogsexporter"
 	"github.com/SigNoz/signoz-otel-collector/exporter/clickhousetracesexporter"
 	"github.com/SigNoz/signoz-otel-collector/exporter/metadataexporter"
-	"github.com/SigNoz/signoz-otel-collector/exporter/signozclickhousemeter"
 	"github.com/SigNoz/signoz-otel-collector/exporter/signozclickhousemetrics"
 	_ "github.com/SigNoz/signoz-otel-collector/pkg/parser/grok"
 	"github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor"
@@ -57,7 +55,6 @@ func Components() (otelcol.Factories, error) {
 		debugexporter.NewFactory(),
 		metadataexporter.NewFactory(),
 		nopexporter.NewFactory(),
-		signozclickhousemeter.NewFactory(),
 	}
 
 	processors := []processor.Factory{
@@ -68,9 +65,7 @@ func Components() (otelcol.Factories, error) {
 		signozlogspipelineprocessor.NewFactory(),
 	}
 
-	connectors := []connector.Factory{
-		signozmeterconnector.NewFactory(),
-	}
+	connectors := []connector.Factory{}
 
 	factories, err := CoreComponents(
 		extensions,
