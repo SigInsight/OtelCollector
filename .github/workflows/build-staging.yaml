@@ -14,6 +14,7 @@ env:
   GO_VERSION: "1.24"
   DOCKER_BASE_IMAGE: debian:bookworm-slim
   REGISTRY: ghcr.io
+  IMAGE_OWNER: siginsight
 
 jobs:
   prepare:
@@ -23,7 +24,6 @@ jobs:
       version: ${{ steps.build-info.outputs.version }}
       deployment: ${{ steps.build-info.outputs.deployment }}
       debian_sha: ${{ steps.debian.outputs.sha }}
-      owner_lc: ${{ steps.owner.outputs.lc }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -51,11 +51,6 @@ jobs:
 
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "deployment=${deployment}" >> $GITHUB_OUTPUT
-      - name: owner-lowercase
-        id: owner
-        run: |
-          # GHCR requires the repository owner segment to be lowercase.
-          echo "lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
       - name: resolve-debian-sha
         id: debian
         run: |
@@ -93,7 +88,7 @@ jobs:
           file: ./cmd/signozotelcollector/Dockerfile.multi-arch
           platforms: linux/amd64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ needs.prepare.outputs.owner_lc }}/signoz-otel-collector:staging-${{ needs.prepare.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/signoz-otel-collector:staging-${{ needs.prepare.outputs.version }}
           # APT_MIRROR override: Dockerfile.multi-arch defaults to
           # mirrors.aliyun.com for in-region builds. GitHub-hosted runners
           # are outside CN, so route apt back through deb.debian.org here.

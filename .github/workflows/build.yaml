@@ -12,6 +12,7 @@ env:
   GO_VERSION: "1.24"
   DOCKER_BASE_IMAGE: debian:bookworm-slim
   REGISTRY: ghcr.io
+  IMAGE_OWNER: siginsight
 
 jobs:
   prepare:
@@ -21,7 +22,6 @@ jobs:
       debian_sha: ${{ steps.debian.outputs.sha }}
       push: ${{ steps.providers.outputs.push }}
       tag_latest: ${{ steps.providers.outputs.tag_latest }}
-      owner_lc: ${{ steps.owner.outputs.lc }}
     steps:
       - name: resolve-version
         id: version
@@ -44,11 +44,6 @@ jobs:
             echo "push=false" >> $GITHUB_OUTPUT
             echo "tag_latest=false" >> $GITHUB_OUTPUT
           fi
-      - name: owner-lowercase
-        id: owner
-        run: |
-          # GHCR requires the repository owner segment to be lowercase.
-          echo "lc=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
       - name: resolve-debian-sha
         id: debian
         run: |
@@ -85,7 +80,7 @@ jobs:
       - name: image-tags
         id: tags
         run: |
-          base="${REGISTRY}/${{ needs.prepare.outputs.owner_lc }}/signoz-otel-collector"
+          base="${REGISTRY}/${IMAGE_OWNER}/signoz-otel-collector"
           tags="${base}:${{ needs.prepare.outputs.version }}"
           if [[ "${{ needs.prepare.outputs.tag_latest }}" == "true" ]]; then
             tags="${tags},${base}:latest"

@@ -159,7 +159,7 @@ services:
   # waits until telemetrystore-migrator has finished schema bring-up.
   otel-collector:
     !!merge <<: *db-depend
-    image: ghcr.io/${GHCR_OWNER:-forza0310}/signoz-otel-collector:${OTELCOL_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-siginsight}/signoz-otel-collector:${OTELCOL_TAG:-latest}
     container_name: signoz-otel-collector
     entrypoint: ["/bin/sh"]
     command:
@@ -186,7 +186,7 @@ services:
   # migration list embedded in the binary stays consistent.
   signoz-telemetrystore-migrator:
     !!merge <<: *db-depend
-    image: ghcr.io/${GHCR_OWNER:-forza0310}/signoz-otel-collector:${OTELCOL_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-siginsight}/signoz-otel-collector:${OTELCOL_TAG:-latest}
     container_name: signoz-telemetrystore-migrator
     environment:
       - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
