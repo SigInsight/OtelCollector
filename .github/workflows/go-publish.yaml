@@ -20,7 +20,9 @@ jobs:
       - name: wait for module proxy to index this version
         run: |
           version="${GITHUB_REF#refs/tags/}"
-          url="https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.mod"
+          # The Go module proxy escapes uppercase path characters as ! + lowercase.
+          module_path="github.com/!sig!insight/!otel!collector"
+          url="https://proxy.golang.org/${module_path}/@v/${version}.mod"
 
           # A request triggers proxy indexing, but a new tag is not necessarily
           # available immediately. Retry instead of failing on the initial 404.
