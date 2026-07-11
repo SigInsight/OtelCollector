@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/otelcol/otelcoltest"
 
-	"github.com/SigNoz/signoz-otel-collector/exporter/clickhousetracesexporter/internal/metadata"
+	"github.com/SigInsight/OtelCollector/exporter/clickhousetracesexporter/internal/metadata"
 )
 
 // TestLoadConfig checks whether yaml configuration can be loaded correctly

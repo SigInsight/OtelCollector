@@ -1,7 +1,7 @@
 package traces
 
 import (
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	"github.com/SigInsight/OtelCollector/utils"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap/zapcore"

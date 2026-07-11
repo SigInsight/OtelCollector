@@ -32,9 +32,9 @@ import (
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/idbatcher"
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/sampling"
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/timeutils"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/idbatcher"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/sampling"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/timeutils"
 )
 
 // policy combines a sampling policy evaluator with the destinations to be

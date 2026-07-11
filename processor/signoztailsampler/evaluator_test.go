@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/sampling"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/sampling"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"

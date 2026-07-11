@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/signozcol"
+	"github.com/SigInsight/OtelCollector/signozcol"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.uber.org/zap"
 )

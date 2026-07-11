@@ -8,7 +8,7 @@ import (
 	cmock "github.com/srikanthccv/ClickHouse-go-mock"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/pdatagen/pmetricsgen"
+	"github.com/SigInsight/OtelCollector/pkg/pdatagen/pmetricsgen"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
 	"go.opentelemetry.io/collector/pdata/pmetric"

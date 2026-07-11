@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("signozmeter")
-	ScopeName = "github.com/SigNoz/signoz-otel-collector/connectors/signozmeterconnector"
+	ScopeName = "github.com/SigInsight/OtelCollector/connectors/signozmeterconnector"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	pkgfingerprint "github.com/SigNoz/signoz-otel-collector/internal/common/fingerprint"
+	pkgfingerprint "github.com/SigInsight/OtelCollector/internal/common/fingerprint"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 )

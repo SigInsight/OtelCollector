@@ -23,7 +23,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/exporter/exportertest"
 
-	"github.com/SigNoz/signoz-otel-collector/exporter/clickhouselogsexporter/internal/metadata"
+	"github.com/SigInsight/OtelCollector/exporter/clickhouselogsexporter/internal/metadata"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {

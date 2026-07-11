@@ -25,7 +25,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/processor/processortest"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signozspanmetricsprocessor/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor/internal/metadata"
 )
 
 func TestNewProcessor(t *testing.T) {

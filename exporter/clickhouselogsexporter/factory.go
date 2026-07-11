@@ -27,8 +27,8 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
-	"github.com/SigNoz/signoz-otel-collector/exporter/clickhouselogsexporter/internal/metadata"
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	"github.com/SigInsight/OtelCollector/exporter/clickhouselogsexporter/internal/metadata"
+	"github.com/SigInsight/OtelCollector/utils"
 )
 
 const (

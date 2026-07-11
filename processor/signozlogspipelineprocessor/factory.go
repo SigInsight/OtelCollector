@@ -7,14 +7,14 @@ import (
 	"errors"
 	"fmt"
 
-	signozlogspipelinestanzaadapter "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/adapter"
-	signozlogspipelinestanzaoperator "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator"
+	signozlogspipelinestanzaadapter "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/adapter"
+	signozlogspipelinestanzaoperator "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/internal/metadata"
 )
 
 func NewFactory() processor.Factory {

@@ -8,9 +8,9 @@ import (
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/SigNoz/signoz-otel-collector/utils"
-	"github.com/SigNoz/signoz-otel-collector/utils/fingerprint"
-	"github.com/SigNoz/signoz-otel-collector/utils/flatten"
+	"github.com/SigInsight/OtelCollector/utils"
+	"github.com/SigInsight/OtelCollector/utils/fingerprint"
+	"github.com/SigInsight/OtelCollector/utils/flatten"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/pipeline"
 	"go.uber.org/zap"
 
-	kash "github.com/SigNoz/signoz-otel-collector/exporter/metadataexporter/cache"
+	kash "github.com/SigInsight/OtelCollector/exporter/metadataexporter/cache"
 )
 
 const (

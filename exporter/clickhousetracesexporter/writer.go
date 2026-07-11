@@ -25,9 +25,9 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/SigNoz/signoz-otel-collector/internal/common"
-	"github.com/SigNoz/signoz-otel-collector/usage"
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	"github.com/SigInsight/OtelCollector/internal/common"
+	"github.com/SigInsight/OtelCollector/usage"
+	"github.com/SigInsight/OtelCollector/utils"
 	"github.com/google/uuid"
 	"github.com/jellydator/ttlcache/v3"
 	"go.opencensus.io/stats"

@@ -15,8 +15,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/metering"
-	v1 "github.com/SigNoz/signoz-otel-collector/pkg/metering/v1"
+	"github.com/SigInsight/OtelCollector/pkg/metering"
+	v1 "github.com/SigInsight/OtelCollector/pkg/metering/v1"
 	"github.com/google/uuid"
 )
 

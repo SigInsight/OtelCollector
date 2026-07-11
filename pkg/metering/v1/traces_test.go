@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/pdatagen/ptracesgen"
+	"github.com/SigInsight/OtelCollector/pkg/pdatagen/ptracesgen"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"

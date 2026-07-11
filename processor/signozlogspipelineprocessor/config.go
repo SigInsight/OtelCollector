@@ -4,7 +4,7 @@ package signozlogspipelineprocessor
 import (
 	"errors"
 
-	signozlogspipelinestanzaadapter "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/adapter"
+	signozlogspipelinestanzaadapter "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/adapter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator"
 	"go.opentelemetry.io/collector/component"
 )

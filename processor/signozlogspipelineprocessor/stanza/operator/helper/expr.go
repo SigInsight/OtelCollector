@@ -7,8 +7,8 @@ import (
 	"os"
 	"sync"
 
-	signozstanzaentry "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/entry"
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	signozstanzaentry "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/entry"
+	"github.com/SigInsight/OtelCollector/utils"
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/ast"
 	"github.com/expr-lang/expr/vm"

@@ -3,8 +3,8 @@ package schemamigrator
 import (
 	"fmt"
 
-	"github.com/SigNoz/signoz-otel-collector/constants"
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	"github.com/SigInsight/OtelCollector/constants"
+	"github.com/SigInsight/OtelCollector/utils"
 )
 
 var LogsMigrationsV2 = []SchemaMigrationRecord{

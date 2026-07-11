@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"slices"
 
-	signozstanzahelper "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/helper"
+	signozstanzahelper "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/helper"
 	"github.com/expr-lang/expr/vm"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"

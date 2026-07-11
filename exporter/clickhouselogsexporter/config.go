@@ -18,7 +18,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/utils"
+	"github.com/SigInsight/OtelCollector/utils"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"

@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// TODO: Read from github.com/SigNoz/signoz-otel-collector/pkg/schema/traces
+// TODO: Read from github.com/SigInsight/OtelCollector/pkg/schema/traces
 type Event struct {
 	Name         string            `json:"name,omitempty"`
 	TimeUnixNano uint64            `json:"timeUnixNano,omitempty"`
@@ -132,7 +132,7 @@ type Span struct {
 	SpanAttributes     []SpanAttribute    `json:"spanAttributes,omitempty"`
 }
 
-// TODO: Read from github.com/SigNoz/signoz-otel-collector/pkg/schema/traces
+// TODO: Read from github.com/SigInsight/OtelCollector/pkg/schema/traces
 type ErrorEvent struct {
 	Event        Event  `json:"errorEvent,omitempty"`
 	ErrorID      string `json:"errorID,omitempty"`
@@ -172,9 +172,9 @@ type SpanV3 struct {
 	BillableResourcesString map[string]string `json:"resources_string,omitempty"`
 
 	// for events
-	// TODO: Read from github.com/SigNoz/signoz-otel-collector/pkg/schema/traces
+	// TODO: Read from github.com/SigInsight/OtelCollector/pkg/schema/traces
 	Events []string `json:"event,omitempty"`
-	// TODO: Read from github.com/SigNoz/signoz-otel-collector/pkg/schema/traces
+	// TODO: Read from github.com/SigInsight/OtelCollector/pkg/schema/traces
 	ErrorEvents []ErrorEvent `json:"-"`
 
 	ServiceName string `json:"serviceName,omitempty"` // for error table
@@ -246,7 +246,7 @@ func (s *Span) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	return nil
 }
 
-// TODO: Read from github.com/SigNoz/signoz-otel-collector/pkg/schema/traces
+// TODO: Read from github.com/SigInsight/OtelCollector/pkg/schema/traces
 type OtelSpanRef struct {
 	TraceId string `json:"traceId,omitempty"`
 	SpanId  string `json:"spanId,omitempty"`

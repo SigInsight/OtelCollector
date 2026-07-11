@@ -3,7 +3,7 @@ package v1
 import (
 	"regexp"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/metering"
+	"github.com/SigInsight/OtelCollector/pkg/metering"
 
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"

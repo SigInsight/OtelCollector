@@ -1,6 +1,6 @@
 package schemamigrator
 
-import "github.com/SigNoz/signoz-otel-collector/utils"
+import "github.com/SigInsight/OtelCollector/utils"
 
 var LogsMigrations = []SchemaMigrationRecord{
 	{

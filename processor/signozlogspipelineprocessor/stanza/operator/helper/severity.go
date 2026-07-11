@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	signozstanzaentry "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/entry"
+	signozstanzaentry "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/entry"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/errors"
 )

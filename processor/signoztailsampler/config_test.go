@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/metadata"
 )
 
 func TestLoadConfig(t *testing.T) {

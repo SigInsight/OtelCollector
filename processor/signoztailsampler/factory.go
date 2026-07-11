@@ -25,7 +25,7 @@ import (
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/processor"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signoztailsampler/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signoztailsampler/internal/metadata"
 )
 
 var onceMetrics sync.Once

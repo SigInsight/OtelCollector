@@ -25,7 +25,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signozspanmetricsprocessor/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor/internal/metadata"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("signozspanmetrics")
-	ScopeName = "github.com/SigNoz/signoz-otel-collector/processor/signozspanmetricsprocessor"
+	ScopeName = "github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor"
 )
 
 const (

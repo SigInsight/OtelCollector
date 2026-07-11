@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	signozstanzaentry "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/entry"
-	signozstanzahelper "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/helper"
-	"github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/operatortest"
+	signozstanzaentry "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/entry"
+	signozstanzahelper "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/helper"
+	"github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/operatortest"
 )
 
 func TestConfig(t *testing.T) {

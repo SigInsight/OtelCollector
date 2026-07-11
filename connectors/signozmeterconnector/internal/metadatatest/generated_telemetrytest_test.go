@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/SigNoz/signoz-otel-collector/connectors/signozmeterconnector/internal/metadata"
+	"github.com/SigInsight/OtelCollector/connectors/signozmeterconnector/internal/metadata"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"

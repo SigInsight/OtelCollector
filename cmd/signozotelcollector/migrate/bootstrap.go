@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/SigNoz/signoz-otel-collector/cmd/signozotelcollector/config"
-	schemamigrator "github.com/SigNoz/signoz-otel-collector/cmd/signozschemamigrator/schema_migrator"
+	"github.com/SigInsight/OtelCollector/cmd/signozotelcollector/config"
+	schemamigrator "github.com/SigInsight/OtelCollector/cmd/signozschemamigrator/schema_migrator"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"

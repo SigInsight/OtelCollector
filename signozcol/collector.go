@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/components"
+	"github.com/SigInsight/OtelCollector/components"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"

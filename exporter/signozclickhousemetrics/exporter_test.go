@@ -11,20 +11,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/usage"
+	"github.com/SigInsight/OtelCollector/usage"
 	"github.com/google/uuid"
 	cmock "github.com/srikanthccv/ClickHouse-go-mock"
 	"go.uber.org/zap/zaptest"
 
 	chproto "github.com/ClickHouse/ch-go/proto"
-	"github.com/SigNoz/signoz-otel-collector/pkg/pdatagen/pmetricsgen"
+	"github.com/SigInsight/OtelCollector/pkg/pdatagen/pmetricsgen"
 	"github.com/stretchr/testify/require"
 	"github.com/zeebo/assert"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/zap"
 
-	internalmetadata "github.com/SigNoz/signoz-otel-collector/exporter/signozclickhousemetrics/internal/metadata"
+	internalmetadata "github.com/SigInsight/OtelCollector/exporter/signozclickhousemetrics/internal/metadata"
 )
 
 func Test_prepareBatchGauge(t *testing.T) {

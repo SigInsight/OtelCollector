@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/keycheck"
+	"github.com/SigInsight/OtelCollector/pkg/keycheck"
 )
 
 type IndexType string

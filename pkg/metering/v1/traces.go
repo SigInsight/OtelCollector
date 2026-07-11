@@ -3,9 +3,9 @@ package v1
 import (
 	"github.com/goccy/go-json"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/metering"
-	"github.com/SigNoz/signoz-otel-collector/pkg/schema/common"
-	schema "github.com/SigNoz/signoz-otel-collector/pkg/schema/traces"
+	"github.com/SigInsight/OtelCollector/pkg/metering"
+	"github.com/SigInsight/OtelCollector/pkg/schema/common"
+	schema "github.com/SigInsight/OtelCollector/pkg/schema/traces"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.uber.org/zap"
 )

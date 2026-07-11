@@ -8,9 +8,9 @@ import (
 
 	"github.com/goccy/go-json"
 
-	"github.com/SigNoz/signoz-otel-collector/pkg/schema/traces"
-	"github.com/SigNoz/signoz-otel-collector/utils"
-	"github.com/SigNoz/signoz-otel-collector/utils/flatten"
+	"github.com/SigInsight/OtelCollector/pkg/schema/traces"
+	"github.com/SigInsight/OtelCollector/utils"
+	"github.com/SigInsight/OtelCollector/utils/flatten"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.uber.org/zap"
 )

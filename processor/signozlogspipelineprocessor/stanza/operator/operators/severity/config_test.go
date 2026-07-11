@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	signozstanzaentry "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/entry"
-	"github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/operatortest"
+	signozstanzaentry "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/entry"
+	"github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/operatortest"
 )
 
 func TestUnmarshal(t *testing.T) {

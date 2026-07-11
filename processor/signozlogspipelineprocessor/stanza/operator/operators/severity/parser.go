@@ -5,7 +5,7 @@ package severity // import "github.com/open-telemetry/opentelemetry-collector-co
 import (
 	"context"
 
-	signozstanzahelper "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/helper"
+	signozstanzahelper "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/helper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry"
 )
 

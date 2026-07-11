@@ -1,6 +1,6 @@
 package schemamigrator
 
-import "github.com/SigNoz/signoz-otel-collector/utils"
+import "github.com/SigInsight/OtelCollector/utils"
 
 // move them to TracesMigrations once it's ready to deploy
 var TracesMigrations = []SchemaMigrationRecord{

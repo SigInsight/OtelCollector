@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	signozstanzaentry "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/entry"
-	signozstanzahelper "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator/helper"
+	signozstanzaentry "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/entry"
+	signozstanzahelper "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator/helper"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"

@@ -3,7 +3,7 @@ package signozclickhousemetrics
 import (
 	"testing"
 
-	"github.com/SigNoz/signoz-otel-collector/usage"
+	"github.com/SigInsight/OtelCollector/usage"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.opencensus.io/metric/metricdata"

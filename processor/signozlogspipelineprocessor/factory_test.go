@@ -5,8 +5,8 @@ import (
 	"context"
 	"testing"
 
-	signozlogspipelinestanzaadapter "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/adapter"
-	signozlogspipelinestanzaoperator "github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/stanza/operator"
+	signozlogspipelinestanzaadapter "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/adapter"
+	signozlogspipelinestanzaoperator "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/stanza/operator"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer/consumertest"
@@ -16,7 +16,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/regex"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signozlogspipelineprocessor/internal/metadata"
+	"github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor/internal/metadata"
 )
 
 func TestCreateDefaultConfig(t *testing.T) {

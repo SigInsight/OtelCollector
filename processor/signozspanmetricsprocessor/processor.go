@@ -39,7 +39,7 @@ import (
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 	"go.uber.org/zap"
 
-	"github.com/SigNoz/signoz-otel-collector/processor/signozspanmetricsprocessor/internal/cache"
+	"github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor/internal/cache"
 )
 
 const (

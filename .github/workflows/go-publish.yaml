@@ -1,0 +1,34 @@
+name: go-publish
+
+# Go module 发布不需要构建产物。这个 workflow 的唯一作用是：
+# 打 tag 后主动请求 Go module proxy 索引该版本，加速 pkg.go.dev 收录。
+# （只要有人 go get 一次，proxy 就会自动索引，所以这步是可选的加速手段。）
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  trigger-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: request module proxy to index this version
+        run: |
+          version="${GITHUB_REF#refs/tags/}"
+          # 向 proxy.golang.org 发起索引请求
+          # 这个接口只是"提示" proxy 去拉取，不保证立即完成
+          curl -sSf -o /dev/null \
+            "https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.info" \
+            || echo "proxy index request failed (non-fatal, will be picked up on first go get)"
+      - name: verify go get works
+        run: |
+          version="${GITHUB_REF#refs/tags/}"
+          # 验证该版本可以被 go get 成功（module path 与仓库一致）
+          curl -sSf -o /dev/null \
+            "https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.mod" \
+            && echo "module ${version} is now resolvable via proxy"

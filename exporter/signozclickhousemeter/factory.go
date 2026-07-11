@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	internalmetadata "github.com/SigNoz/signoz-otel-collector/exporter/signozclickhousemeter/internal/metadata"
+	internalmetadata "github.com/SigInsight/OtelCollector/exporter/signozclickhousemeter/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configoptional"
 	"go.opentelemetry.io/collector/config/configretry"

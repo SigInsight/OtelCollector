@@ -18,7 +18,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	_ "github.com/SigNoz/signoz-otel-collector/pkg/parser/grok" // ensure grok parser gets registered.
+	_ "github.com/SigInsight/OtelCollector/pkg/parser/grok" // ensure grok parser gets registered.
 )
 
 func newLogsPipelineProcessor(

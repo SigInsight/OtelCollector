@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/receiverhelper"
 
-	"github.com/SigNoz/signoz-otel-collector/receiver/clickhousesystemtablesreceiver/internal/metadata"
+	"github.com/SigInsight/OtelCollector/receiver/clickhousesystemtablesreceiver/internal/metadata"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SigNoz/signoz-otel-collector/exporter/metadataexporter/internal/metadata"
+	"github.com/SigInsight/OtelCollector/exporter/metadataexporter/internal/metadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
