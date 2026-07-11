@@ -17,18 +17,22 @@ jobs:
   trigger-proxy:
     runs-on: ubuntu-latest
     steps:
-      - name: request module proxy to index this version
+      - name: wait for module proxy to index this version
         run: |
           version="${GITHUB_REF#refs/tags/}"
-          # 向 proxy.golang.org 发起索引请求
-          # 这个接口只是"提示" proxy 去拉取，不保证立即完成
-          curl -sSf -o /dev/null \
-            "https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.info" \
-            || echo "proxy index request failed (non-fatal, will be picked up on first go get)"
-      - name: verify go get works
-        run: |
-          version="${GITHUB_REF#refs/tags/}"
-          # 验证该版本可以被 go get 成功（module path 与仓库一致）
-          curl -sSf -o /dev/null \
-            "https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.mod" \
-            && echo "module ${version} is now resolvable via proxy"
+          url="https://proxy.golang.org/github.com/SigInsight/OtelCollector/@v/${version}.mod"
+
+          # A request triggers proxy indexing, but a new tag is not necessarily
+          # available immediately. Retry instead of failing on the initial 404.
+          for attempt in {1..30}; do
+            if curl -sSf -o /dev/null "${url}"; then
+              echo "module ${version} is now resolvable via proxy"
+              exit 0
+            fi
+
+            echo "module ${version} is not indexed yet (attempt ${attempt}/30)"
+            sleep 10
+          done
+
+          echo "::error::module ${version} was not resolvable via proxy after 5 minutes"
+          exit 1
