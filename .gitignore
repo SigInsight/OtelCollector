@@ -28,3 +28,4 @@ signoz-collector
 # tmp
 tmp/
 **/tmp/**
+tmp.md
