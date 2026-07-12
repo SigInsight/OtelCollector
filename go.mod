@@ -24,14 +24,12 @@ require (
 	github.com/lightstep/go-expohisto v1.0.0
 	github.com/oklog/ulid v1.3.1
 	github.com/open-telemetry/opamp-go v0.22.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.152.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.152.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.144.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/logstransformprocessor v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor v0.152.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.144.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver v0.144.0
@@ -265,7 +263,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.144.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/experimentalmetricmetadata v0.144.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.144.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.152.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.144.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.152.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/winperfcounters v0.144.0 // indirect

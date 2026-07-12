@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/knadh/koanf/parsers/yaml"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/logstransformprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -29,55 +29,27 @@ func TestLogsProcessingSimulation(t *testing.T) {
 		}),
 	}
 
-	testLogstransformConf1, err := yaml.Parser().Unmarshal([]byte(`
-    operators:
-        - type: router
-          id: router_signoz
-          routes:
-            - output: add
-              expr: attributes.method == "GET"
-          default: noop
-        - type: add
-          id: add
-          field: attributes.test
-          value: test-value-get
-        - type: noop
-          id: noop
+	// Use filterprocessor to drop logs with method=POST, keeping only GET.
+	// This verifies the simulator can run a logs pipeline through a processor.
+	testFilterConf, err := yaml.Parser().Unmarshal([]byte(`
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["method"] == "POST"'
     `))
-	require.Nil(err, "could not unmarshal test logstransform op config")
-	testProcessor1 := ProcessorConfig{
-		Name:   "logstransform/test",
-		Config: testLogstransformConf1,
-	}
-
-	testLogstransformConf2, err := yaml.Parser().Unmarshal([]byte(`
-    operators:
-        - type: router
-          id: router_signoz
-          routes:
-            - output: add
-              expr: attributes.method == "POST"
-          default: noop
-        - type: add
-          id: add
-          field: attributes.test
-          value: test-value-post
-        - type: noop
-          id: noop
-    `))
-	require.Nil(err, "could not unmarshal test logstransform op config")
-	testProcessor2 := ProcessorConfig{
-		Name:   "logstransform/test2",
-		Config: testLogstransformConf2,
+	require.Nil(err, "could not unmarshal test filter config")
+	testProcessor := ProcessorConfig{
+		Name:   "filter/test",
+		Config: testFilterConf,
 	}
 
 	processorFactories, err := otelcol.MakeFactoryMap(
-		logstransformprocessor.NewFactory(),
+		filterprocessor.NewFactory(),
 	)
 	require.Nil(err, "could not create processors factory map")
 
 	configGenerator := makeTestConfigGenerator(
-		[]ProcessorConfig{testProcessor1, testProcessor2},
+		[]ProcessorConfig{testProcessor},
 	)
 	outputLogs, collectorErrs, err := SimulateLogsProcessing(
 		context.Background(),
@@ -87,22 +59,16 @@ func TestLogsProcessingSimulation(t *testing.T) {
 		300*time.Millisecond,
 	)
 	require.Nil(err)
-	require.Equal(len(collectorErrs), 0)
+	require.Equal(0, len(collectorErrs))
 
-	for _, l := range outputLogs {
-		rl := l.ResourceLogs().At(0)
-		sl := rl.ScopeLogs().At(0)
-		record := sl.LogRecords().At(0)
-		method, exists := record.Attributes().Get("method")
-		require.True(exists)
-		testVal, exists := record.Attributes().Get("test")
-		require.True(exists)
-		if method.Str() == "GET" {
-			require.Equal(testVal.Str(), "test-value-get")
-		} else {
-			require.Equal(testVal.Str(), "test-value-post")
-		}
-	}
+	// Only the GET log should pass through the filter; POST is dropped.
+	require.Equal(1, len(outputLogs))
+	rl := outputLogs[0].ResourceLogs().At(0)
+	sl := rl.ScopeLogs().At(0)
+	record := sl.LogRecords().At(0)
+	method, exists := record.Attributes().Get("method")
+	require.True(exists)
+	require.Equal("GET", method.Str())
 }
 
 func makeTestPlog(body string, attrsStr map[string]string) plog.Logs {

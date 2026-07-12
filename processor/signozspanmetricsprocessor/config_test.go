@@ -22,13 +22,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/exporter/debugexporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
 	"go.opentelemetry.io/collector/otelcol/otelcoltest"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/processor/batchprocessor"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 
 	"github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor/internal/metadata"
 )
@@ -48,7 +47,7 @@ func TestLoadConfig(t *testing.T) {
 	}{
 		{
 			configFile:                         "config-2-pipelines.yaml",
-			wantMetricsExporter:                "prometheus",
+			wantMetricsExporter:                "debug",
 			wantAggregationTemporality:         cumulative,
 			wantDimensionsCacheSize:            500,
 			wantMetricsFlushInterval:           30 * time.Second,
@@ -99,7 +98,7 @@ func TestLoadConfig(t *testing.T) {
 			factories.Processors[component.MustNewType("batch")] = batchprocessor.NewFactory()
 
 			factories.Exporters[component.MustNewType("otlp")] = otlpexporter.NewFactory()
-			factories.Exporters[component.MustNewType("prometheus")] = prometheusexporter.NewFactory()
+			factories.Exporters[component.MustNewType("debug")] = debugexporter.NewFactory()
 
 			// Test
 			cfg, err := otelcoltest.LoadConfigAndValidate(filepath.Join("testdata", tc.configFile), factories)

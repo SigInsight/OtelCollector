@@ -15,8 +15,7 @@ receivers:
         endpoint: "localhost:12345"
 
 exporters:
-  prometheus:
-    endpoint: "0.0.0.0:8889"
+  debug:
 
   otlp:
     endpoint: "localhost:4317"
@@ -26,7 +25,7 @@ exporters:
 processors:
   batch:
   signozspanmetrics:
-    metrics_exporter: prometheus
+    metrics_exporter: debug
     dimensions_cache_size: 500
     metrics_flush_interval: 30s
 service:
@@ -34,7 +33,7 @@ service:
     traces:
       receivers: [otlp/jaeger]
       # spanmetrics will pass on span data untouched to next processor
-      # while also accumulating metrics to be sent to the configured 'prometheus' exporter.
+      # while also accumulating metrics to be sent to the configured 'debug' exporter.
       processors: [signozspanmetrics, batch]
       exporters: [otlp]
 
@@ -43,4 +42,4 @@ service:
       # Added to pass validation requiring at least one receiver in a pipeline.
       receivers: [otlp/spanmetrics]
       # The metrics_exporter must be present in this list.
-      exporters: [prometheus]
+      exporters: [debug]

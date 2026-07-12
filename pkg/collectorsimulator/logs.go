@@ -103,7 +103,7 @@ func GetProcessedLogsFromSimulator(
 	}
 
 	// Must do a time based wait to ensure all logs come through.
-	// For example, logstransformprocessor does internal batching and it
+	// For example, some processors do internal batching and it
 	// takes (processorCount * batchTime) for logs to get through.
 	startTsMillis := time.Now().UnixMilli()
 	for {

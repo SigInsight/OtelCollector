@@ -23,8 +23,7 @@ receivers:
         endpoint: "localhost:12345"
 
 exporters:
-  prometheus:
-    endpoint: "0.0.0.0:8889"
+  debug:
 
   otlp:
     endpoint: "localhost:4317"
@@ -62,4 +61,4 @@ service:
     metrics:
       receivers: [otlp]
       # The metrics_exporter must be present in this list.
-      exporters: [prometheus]
+      exporters: [debug]
