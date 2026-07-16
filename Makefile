@@ -7,6 +7,9 @@ DOCKER_TAG ?= latest
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOPATH ?= $(shell go env GOPATH)
+# Keep Prometheus static, file, and HTTP discovery from the minimum plugin set,
+# and explicitly re-enable Kubernetes discovery while excluding other optional SDs.
+PROMETHEUS_BUILD_TAGS ?= remove_all_sd,enable_kubernetes_sd
 GOTEST=go test -v $(RACE)
 GOFMT=gofmt
 FMT_LOG=.fmt.log
@@ -29,11 +32,11 @@ test-and-lint: test fmt lint
 
 .PHONY: test
 test:
-	go test -count=1 -v -race -cover ./...
+	go test -tags="$(PROMETHEUS_BUILD_TAGS)" -count=1 -v -race -cover ./...
 
 .PHONY: build
 build:
-	go build -o .build/${GOOS}-${GOARCH}/signoz-otel-collector ./cmd/signozotelcollector
+	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/signoz-otel-collector ./cmd/signozotelcollector
 
 .PHONY: amd64
 amd64:
@@ -48,7 +51,7 @@ build-all: amd64 arm64
 
 .PHONY: run
 run:
-	go run cmd/signozotelcollector/main.go --config ${CONFIG_FILE}
+	go run -tags="$(PROMETHEUS_BUILD_TAGS)" cmd/signozotelcollector/main.go --config ${CONFIG_FILE}
 
 .PHONY: fmt
 fmt:

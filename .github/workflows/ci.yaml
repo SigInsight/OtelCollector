@@ -19,6 +19,9 @@ permissions:
 
 env:
   GO_VERSION: "1.25"
+  # Match release builds: retain static/file/HTTP and Kubernetes discovery,
+  # while excluding other optional Prometheus service discovery plugins.
+  PROMETHEUS_BUILD_TAGS: remove_all_sd,enable_kubernetes_sd
 
 defaults:
   run:
@@ -86,4 +89,4 @@ jobs:
       # Combined with setup-go's build cache this typically halves CI
       # wall time after the first run.
       - name: test
-        run: go test -count=1 -race -cover -p 4 -parallel 4 ./...
+        run: go test -tags="${PROMETHEUS_BUILD_TAGS}" -count=1 -race -cover -p 4 -parallel 4 ./...

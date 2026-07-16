@@ -150,21 +150,23 @@ OpAMP 模式下：reload 失败会回滚到上一版 config（[server_client.go:
 
 | 用例 | 删掉的模块 | 仍可用的替代 |
 |---|---|---|
-| Kafka / Pulsar / RabbitMQ / Kinesis / S3 / GCP PubSub 出站 | kafkaexporter, pulsarexporter, rabbitmqexporter, awskinesisexporter, awss3exporter, googlecloudpubsubexporter | **`signozkafkareceiver` 入站还在；出站没了** |
+| Kafka / Pulsar / RabbitMQ / Kinesis / S3 / GCP PubSub | kafkaexporter, pulsarexporter, rabbitmqexporter, awskinesisexporter, awss3exporter, googlecloudpubsubexporter, signozkafkareceiver | **入站、出站都没了** |
 | Jaeger / Zipkin 协议接收 traces | jaegerreceiver, zipkinreceiver | OTLP only |
 | Filelog / Syslog / TCP / UDP 等纯日志通道 | filelogreceiver, syslogreceiver, tcplogreceiver, udplogreceiver | OTLP logs only |
 | HTTP / TCP / ICMP / SSH / SNMP / Netflow 主动健康检查 | httpcheckreceiver, tcpcheckreceiver, icmpcheckreceiver, sshcheckreceiver, snmpreceiver, netflowreceiver, ntpreceiver, chronyreceiver | 全没了 |
 | 云厂商/平台专属遥测拉取 | githubreceiver, gitlabreceiver, dockerstatsreceiver, podmanreceiver, jmxreceiver, redfishreceiver, nsxtreceiver, expvarreceiver, ciscoosreceiver, envoyalsreceiver, k8sobjectsreceiver, otelarrowreceiver, osqueryreceiver, otlpjsonfilereceiver, simpleprometheusreceiver, systemdreceiver, webhookeventreceiver, windowsperfcountersreceiver, windowsservicereceiver, filestatsreceiver, yanggrpcreceiver, pprofreceiver | OTLP / hostmetrics / kubeletstats / k8scluster / prometheus 还在 |
 | 写 Prometheus / 文件 / syslog / Alertmanager / Cassandra / Datadog / Zipkin | prometheusexporter, prometheusremotewriteexporter, fileexporter, syslogexporter, alertmanagerexporter, cassandraexporter, zipkinexporter, datadogconnector, grafanacloudconnector | **全没了**。出站只能 OTLP/OTLPHTTP/debug/nop/clickhouse* |
-| OAuth2 / OIDC / Azure 三种 auth extension | oauth2clientauthextension, oidcauthextension, azureauthextension | basicauth + bearertoken 还在 |
-| 轮询/负载均衡/异常追踪 connector | failoverconnector, loadbalancingexporter, roundrobinconnector, exceptionsconnector, slowsqlconnector, metricsaslogsconnector, otlpjsonconnector, sumconnector, countconnector, datadogsemanticsprocessor | 主路径 connector（forward/routing/servicegraph/signaltometrics/spanmetrics/signozmeter）都保留 |
-| 高级 processor（去重 / 异常 / 隔离森林 / DNS / GeoIP / Schema） | intervalprocessor, isolationforestprocessor, dnslookupprocessor, geoipprocessor, schemaprocessor, sumologicprocessor, coralogixprocessor, remotetapprocessor, groupbytraceprocessor, unrollprocessor | 数据增强四件套（attributes/resource/transform/filter）都在；`logdedupprocessor` 已保留 |
-| Docker / ECS observer | dockerobserver, ecsobserver, ecstaskobserver | hostobserver + k8sobserver 还在 |
-| Jaeger Remote Sampling 下发 extension | jaegerremotesampling | tailsampling 等"本地决策"的还在 |
+| 认证 extension | oauth2clientauthextension, oidcauthextension, azureauthextension, basicauthextension, bearertokenauthextension | 全没了；需在上游网关处理认证 |
+| 轮询/负载均衡/异常追踪 connector | failoverconnector, loadbalancingexporter, roundrobinconnector, exceptionsconnector, slowsqlconnector, metricsaslogsconnector, otlpjsonconnector, sumconnector, countconnector, forwardconnector, routingconnector, servicegraphconnector, signaltometricsconnector, spanmetricsconnector | 只保留 `signozmeter` |
+| 通用及高级 processor | attributesprocessor, resourceprocessor, transformprocessor, logdedupprocessor, intervalprocessor, isolationforestprocessor, dnslookupprocessor, geoipprocessor, schemaprocessor, groupbytraceprocessor, unrollprocessor | 保留 filter、batch、memory_limiter、resourcedetection、signozlogspipeline、signozspanmetrics、signoztailsampler |
+| Docker / ECS / 主机 / Kubernetes observer | dockerobserver, ecsobserver, ecstaskobserver, hostobserver, k8sobserver | 全没了 |
+| Jaeger Remote Sampling 下发 extension | jaegerremotesampling | `signoztailsampler` 仍提供 collector 内部 tail sampling |
 
 ### 仍可用的核心能力
 
-OTLP gRPC/HTTP 进 → batch/memorylimiter/attributes/resource/transform/filter/tail_sampling/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigNoz 主链路全程**，精简过程严格保留。
+OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/signozlogspipeline/signoztailsampler/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigNoz 主链路全程**，精简过程严格保留。
+
+本仓库的 `resourcedetection` 是受控精简实现，只注册 `env` 和 `system` detector；配置云厂商 detector（如 `ec2`、`ecs`、`eks`、`gcp`、`azure`）会在加载时返回 `invalid detector key`。这不会移除 `prometheusreceiver` 的云服务发现能力，因此 Prometheus 和 Kubernetes 依赖路径实际使用的云 SDK 仍会保留。
 
 ---
 
@@ -274,7 +276,8 @@ service.pipelines:
 | `health_check` | HTTP 健康检查端点（默认 :13133） |
 | `pprof` | Go pprof 端点（默认 :1777） |
 | `zpages` | debug 网页（默认 :55679） |
-| `basicauth` / `bearertoken` | 给 OTLP receiver 加认证 |
+
+当前构建没有注册认证 extension；需要在反向代理或网关层为 OTLP 入口提供认证。
 
 #### service.telemetry
 **collector 自己的可观测性**——日志格式、内部指标暴露端点（默认 `:8888/metrics`）。OpAMP 那份 config 的 `prometheus` receiver 自抓的就是这个端点。
