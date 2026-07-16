@@ -3,6 +3,7 @@ package opamp
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -57,19 +58,16 @@ func TestNewClient(t *testing.T) {
 		return nil
 	}
 
-	_, err := NewDynamicConfig("./testdata/coll-config-path.yaml", reloadFunc, logger)
-	require.NoError(t, err)
-
-	// maintain a cop of the original config file and restore it after the test
 	fileContents, err := os.ReadFile("testdata/coll-config-path.yaml")
 	require.NoError(t, err)
-	defer func() {
-		err := os.WriteFile("testdata/coll-config-path.yaml", fileContents, 0644)
-		require.NoError(t, err)
-	}()
+	collectorConfigPath := filepath.Join(t.TempDir(), "collector.yaml")
+	require.NoError(t, os.WriteFile(collectorConfigPath, fileContents, 0o600))
+
+	_, err = NewDynamicConfig(collectorConfigPath, reloadFunc, logger)
+	require.NoError(t, err)
 
 	coll := signozcol.New(signozcol.WrappedCollectorSettings{
-		ConfigPaths: []string{"./testdata/coll-config-path.yaml"},
+		ConfigPaths: []string{collectorConfigPath},
 		Version:     "0.0.1-server-client-test",
 	})
 
@@ -78,7 +76,7 @@ func TestNewClient(t *testing.T) {
 		Config: &AgentManagerConfig{
 			ServerEndpoint: "ws://" + srv.Endpoint,
 		},
-		CollectorConfigPath: "./testdata/coll-config-path.yaml",
+		CollectorConfigPath: collectorConfigPath,
 		WrappedCollector:    coll,
 	})
 

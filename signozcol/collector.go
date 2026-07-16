@@ -213,6 +213,7 @@ func newOtelColSettings(configPaths []string, version string, desc string, loggi
 		BuildInfo:              buildInfo,
 		LoggingOptions:         loggingOpts,
 		ConfigProviderSettings: configProviderSettings,
+		SkipSettingGRPCLogger:  true,
 		// This is set to true to disable the collector to handle SIGTERM and SIGINT on its own.
 		DisableGracefulShutdown: true,
 	}, nil

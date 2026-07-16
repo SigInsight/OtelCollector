@@ -166,7 +166,11 @@ OpAMP 模式下：reload 失败会回滚到上一版 config（[server_client.go:
 
 OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/signozlogspipeline/signoztailsampler/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigNoz 主链路全程**，精简过程严格保留。
 
-本仓库的 `resourcedetection` 是受控精简实现，只注册 `env` 和 `system` detector；配置云厂商 detector（如 `ec2`、`ecs`、`eks`、`gcp`、`azure`）会在加载时返回 `invalid detector key`。这不会移除 `prometheusreceiver` 的云服务发现能力，因此 Prometheus 和 Kubernetes 依赖路径实际使用的云 SDK 仍会保留。
+本仓库的 `resourcedetection` 是受控精简实现，只注册 `env` 和 `system` detector；配置云厂商 detector（如 `ec2`、`ecs`、`eks`、`gcp`、`azure`）会在加载时返回 `invalid detector key`。
+
+本仓的 `prometheusreceiver` 同样采用受控的 **scrape-only** 契约：它基于 upstream `prometheusreceiver` v0.152.0，本地 scrape engine 来源为 Prometheus `v0.311.4-0.20260507094802-91c184a899b8`。仅支持 static/file/HTTP/Kubernetes 服务发现、`scrape_config_files`、抓取 HTTP/TLS/Basic/Auth/OAuth2、relabel、协议及直方图语义；严格不支持 remote write/read、rules、alerting、Target Allocator、Prometheus API server 和其他服务发现。
+
+因此，云厂商服务发现及其认证 SDK 已退出当前 tags 下 receiver 与最终 collector 的生产编译闭包。这里描述的是 tagged build 的可达依赖，不等同于断言这些模块已从完整 Go module graph 消失。升级 receiver、`scrapeconfig` 或本地 scrape engine 时，必须同步对应测试，并重新执行依赖负向检查，防止完整 Prometheus config/API/remote storage、未支持 SD 或云 SDK 回流编译闭包。
 
 ---
 
@@ -223,7 +227,7 @@ hostmetrics:
   scrapers: {cpu:, memory:, disk:}
 prometheus:
   config:
-    scrape_configs: [...]              # 内嵌完整 Prometheus scrape 语法
+      scrape_configs: [...]              # 内嵌受控的 scrape-only Prometheus 语法
 ```
 
 #### processors

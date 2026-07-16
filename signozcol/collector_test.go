@@ -21,6 +21,17 @@ func TestCollectorNew(t *testing.T) {
 	}
 }
 
+func TestNewOtelColSettingsSkipsGlobalGRPCLogger(t *testing.T) {
+	settings, err := newOtelColSettings(
+		[]string{"testdata/config.yaml"},
+		"0.0.1-test-settings",
+		"test",
+		nil,
+	)
+	assert.NoError(t, err)
+	assert.True(t, settings.SkipSettingGRPCLogger)
+}
+
 func TestCollectorRunInvalidPath(t *testing.T) {
 	coll := New(WrappedCollectorSettings{
 		ConfigPaths: []string{"testdata/invalid.yaml"},

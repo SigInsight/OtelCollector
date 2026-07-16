@@ -23,7 +23,7 @@ LD_FLAGS ?=
 
 .PHONY: install-tools
 install-tools:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.6.0
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 
 .DEFAULT_GOAL := test-and-lint
 
