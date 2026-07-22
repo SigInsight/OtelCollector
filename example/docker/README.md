@@ -38,7 +38,7 @@ docker compose up -d
 docker compose logs -f siginsight-otel-collector
 ```
 
-Open the UI at <http://localhost:8081>.
+Open the UI at <http://localhost:8080>.
 
 ## Pulling from GHCR
 
