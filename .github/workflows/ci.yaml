@@ -1,8 +1,8 @@
 name: ci
 
-# Replacement for the original signoz/primus.workflows-based CI.
+# Replacement for the original upstream private-workflow-based CI.
 # The original pipeline delegated to `make go-test|go-fmt|go-lint` defined
-# inside the private signoz/primus repo. This project's own Makefile already
+# inside the private upstream repository. This project's own Makefile already
 # defines equivalent targets (`test`, `fmt`, `lint`), so we just call those
 # here to keep CI behaviour identical to a local `make test-and-lint` run.
 
@@ -65,7 +65,7 @@ jobs:
       # NOTE: golangci-lint v2 requires golangci-lint-action v7 or newer
       # (v6 only supports golangci-lint v1).
       #
-      # only-new-issues: this is a large fork of upstream SigNoz. We only
+      # only-new-issues: this is a large fork of the upstream project. We only
       # want to fail on issues introduced by *our* changes, not the ~100
       # legacy lint findings already present in imported upstream code.
       - name: lint

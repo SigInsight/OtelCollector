@@ -1,6 +1,6 @@
 # Example deployment
 
-Single-host docker-compose stack that runs SigNoz with **this fork's
+Single-host docker-compose stack that runs SigInsight with **this fork's
 `siginsight-otel-collector`** image (pulled from GHCR) on top of a single-node
 ClickHouse cluster.
 
@@ -12,7 +12,7 @@ example/docker/
 ├── .env.example                   tag overrides (OTELCOL_TAG, VERSION, ...)
 └── common/                        configs mounted into containers
     ├── clickhouse/                config.xml, users.xml, cluster.xml, ...
-    └── signoz/
+    └── siginsight/
         └── otel-collector-opamp-config.yaml
 ```
 
@@ -20,11 +20,11 @@ The collector's bootstrap config is the repo's canonical
 [`config/collector.yaml`](../../config/collector.yaml), mounted straight into
 the container (see the `otel-collector` volume in `docker-compose.yaml`) — the
 demo does not keep its own copy. Because the collector runs in OpAMP mode
-(`--manager-config` + `--copy-path`), the SigNoz backend overrides this
+(`--manager-config` + `--copy-path`), the SigInsight backend overrides this
 bootstrap at runtime anyway.
 
 The `common/` tree is a copy of the upstream
-[`SigNoz/signoz/deploy/docker/common`](https://github.com/SigNoz/signoz/tree/main/deploy/docker/common)
+[`SigInsight/siginsight/deploy/docker/common`](https://github.com/SigInsight/siginsight/tree/main/deploy/docker/common)
 directory and is committed as-is for convenience. Update it when the
 upstream stack changes if you want to track new defaults.
 
@@ -72,5 +72,5 @@ services:
 - The amd64 image is the only one this fork's CI builds. On arm64 hosts
   you'll need to re-enable arm64 in `.github/workflows/build.yaml` and
   rebuild.
-- Data volumes (`signoz-clickhouse`, `signoz-sqlite`, `signoz-zookeeper-1`)
+- Data volumes (`siginsight-clickhouse`, `siginsight-sqlite`, `siginsight-zookeeper-1`)
   persist across `docker compose down`. Use `down -v` to wipe.

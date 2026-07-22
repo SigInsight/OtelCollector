@@ -1,10 +1,10 @@
-# Full SigNoz stack with this fork's otel-collector image.
+# Full SigInsight stack with this fork's otel-collector image.
 #
 # What this file deploys:
 #   - clickhouse (single node)        Schema-less columnar store. Persistent volume.
 #   - zookeeper-1                     Required by clickhouse-keeper / ON CLUSTER DDL.
 #   - init-clickhouse                 One-shot helper container (entrypoint kept
-#                                     for parity with upstream SigNoz; the
+#                                     for parity with the upstream stack; the
 #                                     histogram-binary fetch is commented out).
 #   - siginsight-telemetrystore-migrator  One-shot. Runs `migrate bootstrap`,
 #                                     `migrate sync up`, `migrate async up`
@@ -12,7 +12,7 @@
 #                                     otel-collector can pass its sync-check.
 #   - otel-collector                  This fork's image. Accepts OTLP on 4317/4318,
 #                                     writes to clickhouse.
-#   - signoz                          SigNoz UI on :8081.
+#   - siginsight                      SigInsight UI on :8081.
 #
 # Both `otel-collector` and `siginsight-telemetrystore-migrator` MUST share the
 # same image tag, otherwise the migration list embedded in the binary can
@@ -27,7 +27,7 @@
 
 x-common: &common
   networks:
-    - signoz-net
+    - siginsight-net
   restart: unless-stopped
   logging:
     options:
@@ -86,7 +86,7 @@ services:
   init-clickhouse:
     !!merge <<: *common
     image: clickhouse/clickhouse-server:25.5.6
-    container_name: signoz-init-clickhouse
+    container_name: siginsight-init-clickhouse
     # The histogram-binary download is commented out; the container only
     # exists so clickhouse can depend on a completed init step. `$$` escapes
     # the dollar sign so docker compose does not try to interpolate from .env.
@@ -99,7 +99,7 @@ services:
         node_arch=$$(uname -m | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
         echo "Fetching histogram-binary for $${node_os}/$${node_arch} (currently skipped)"
         # cd /tmp
-        # wget -O histogram-quantile.tar.gz "https://github.com/SigNoz/signoz/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
+        # wget -O histogram-quantile.tar.gz "https://github.com/SigInsight/siginsight/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
         # tar -xvzf histogram-quantile.tar.gz
         # mv histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
     restart: on-failure
@@ -108,7 +108,7 @@ services:
 
   zookeeper-1:
     !!merge <<: *zookeeper-defaults
-    container_name: signoz-zookeeper-1
+    container_name: siginsight-zookeeper-1
     volumes:
       - zookeeper-1:/bitnami/zookeeper
     environment:
@@ -120,7 +120,7 @@ services:
 
   clickhouse:
     !!merge <<: *clickhouse-defaults
-    container_name: signoz-clickhouse
+    container_name: siginsight-clickhouse
     # Uncomment to expose CH ports on the host (debug only).
     # ports:
     #   - "9000:9000"
@@ -135,10 +135,10 @@ services:
       - clickhouse:/var/lib/clickhouse/
       # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
 
-  signoz:
+  siginsight:
     !!merge <<: *db-depend
-    image: signoz/signoz:${VERSION:-v0.117.1}
-    container_name: signoz
+    image: ${SIGINSIGHT_IMAGE:-ghcr.io/siginsight/siginsight}:${VERSION:-latest}
+    container_name: siginsight
     ports:
       - "8081:8080"
     volumes:
@@ -169,7 +169,7 @@ services:
         /siginsight-otel-collector --config=/etc/otel-collector-config.yaml --manager-config=/etc/manager-config.yaml --copy-path=/var/tmp/collector-config.yaml
     volumes:
       - ../../config/collector.yaml:/etc/otel-collector-config.yaml
-      - ./common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+      - ./common/siginsight/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=siginsight-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
@@ -203,8 +203,8 @@ services:
     restart: on-failure
 
 networks:
-  signoz-net:
-    name: signoz-net
+  siginsight-net:
+    name: siginsight-net
     ipam:
       config:
         - subnet: 172.15.0.0/16
@@ -212,8 +212,8 @@ networks:
 
 volumes:
   clickhouse:
-    name: signoz-clickhouse
+    name: siginsight-clickhouse
   sqlite:
-    name: signoz-sqlite
+    name: siginsight-sqlite
   zookeeper-1:
-    name: signoz-zookeeper-1
+    name: siginsight-zookeeper-1

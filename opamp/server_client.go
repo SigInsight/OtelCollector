@@ -196,7 +196,7 @@ func (s *serverClient) Start(ctx context.Context) error {
 }
 
 // initialNopConfig adds Nopreceiver under `reciever` and strips off all the recievers under pipelines
-// and adds nop receiver to start collector regardless of connecting with Signoz OpAMP server
+// and adds nop receiver to start collector regardless of connecting with SigInsight OpAMP server
 // this enables Collector to start in a No Operation state; enabling extensions so to bypass healthchecks in
 // docker and helm installation
 func (s *serverClient) initialNopConfig() ([]byte, error) {

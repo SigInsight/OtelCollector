@@ -1,1 +1,1 @@
-# SigNoz Meter connector
+# SigInsight Meter connector

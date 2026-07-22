@@ -1,6 +1,6 @@
 # SigInsight OpenTelemetry Collector 架构总览
 
-这份文档梳理本 fork 的 collector 在 SigNoz 部署中的**通信信道、配置生效路径、模块裁剪边界**——回答"它到底怎么和 SigNoz 后端协作"这类问题。
+这份文档梳理本 collector 在 SigInsight 部署中的**通信信道、配置生效路径、模块裁剪边界**——回答"它到底怎么和 SigInsight 后端协作"这类问题。
 
 适合在以下场景查阅：
 - 排查 collector 行为与镜像/config 不一致的怪事
@@ -86,7 +86,7 @@ ReportsEffectiveConfig | ReportsHealth
 
 ---
 
-## 2. SigNoz ↔ collector 通信信道全集
+## 2. SigInsight ↔ collector 通信信道全集
 
 按"是否经 ClickHouse 中转"分两类。
 
@@ -96,7 +96,7 @@ ReportsEffectiveConfig | ReportsHealth
 |---|---|---|---|---|
 | **OpAMP** | WebSocket (Protobuf) | 双向，长连接 | 下发 config / 上报状态、健康、effective config | [opamp/server_client.go](../opamp/server_client.go) |
 
-**就这一条**。SigNoz 后端进程和 collector 进程之间，**没有任何其他直接的进程间通信**。
+**就这一条**。SigInsight 后端进程和 collector 进程之间，**没有任何其他直接的进程间通信**。
 
 ### 经 ClickHouse 间接通信（数据/元数据共享）
 
@@ -104,14 +104,14 @@ ReportsEffectiveConfig | ReportsHealth
 
 | 数据流 | 写入方 | 读取方 | 库.表 |
 |---|---|---|---|
-| traces 主数据 | collector (`clickhousetraces` exporter) | SigNoz UI 后端 | `signoz_traces.signoz_index_v3` 等 |
-| metrics 主数据 | collector (`signozclickhousemetrics`) | SigNoz UI 后端 | `signoz_metrics.*` |
-| logs 主数据 | collector (`clickhouselogsexporter`) | SigNoz UI 后端 | `signoz_logs.distributed_logs_v2` |
-| **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigNoz UI 后端 | `signoz_metadata.*` |
-| **meter**（用量/计费指标）| collector (`signozclickhousemeter`，经 `signozmeter` connector 聚合) | usage 模块 / SigNoz Cloud 计费 | `signoz_meter.*` |
-| span metrics（RED 指标，由 spans 衍生）| collector (`signozspanmetricsprocessor` → `signozclickhousemetrics`) | SigNoz UI 后端（Service Map 等） | `signoz_metrics.*` |
+| traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `signoz_traces.signoz_index_v3` 等 |
+| metrics 主数据 | collector (`signozclickhousemetrics`) | SigInsight UI 后端 | `signoz_metrics.*` |
+| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `signoz_logs.distributed_logs_v2` |
+| **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigInsight UI 后端 | `signoz_metadata.*` |
+| **meter**（用量/计费指标）| collector (`signozclickhousemeter`，经 `signozmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `signoz_meter.*` |
+| span metrics（RED 指标，由 spans 衍生）| collector (`signozspanmetricsprocessor` → `signozclickhousemetrics`) | SigInsight UI 后端（Service Map 等） | `signoz_metrics.*` |
 
-这就是为什么"OpAMP 下发 config"里每个 pipeline 都扇出 3 个 exporter——SigNoz 后端**需要**这 3 类数据都到 CH 才能正常工作。
+这就是为什么"OpAMP 下发 config"里每个 pipeline 都扇出 3 个 exporter——SigInsight 后端**需要**这 3 类数据都到 CH 才能正常工作。
 
 ### Schema 同步（不是运行时通信，但属于 collector ↔ CH 协作）
 
@@ -124,7 +124,7 @@ Collector 二进制内置了 schema migrator 引擎（[cmd/signozschemamigrator/
 | `migrate sync check` | 启动前自检表结构是否匹配代码期望 |
 | `migrate async up` | 后台异步迁移大表 |
 
-部署里通常作为独立 service（`signoz-telemetrystore-migrator`）跑。**升级 collector 镜像 = 升级 SigNoz 期望的表结构定义。**
+部署里通常作为独立 service（`siginsight-telemetrystore-migrator`）跑。**升级 collector 镜像 = 升级 SigInsight 期望的表结构定义。**
 
 ### ⚠️ 谁能改 collector 运行时行为？
 
@@ -164,7 +164,7 @@ OpAMP 模式下：reload 失败会回滚到上一版 config（[server_client.go:
 
 ### 仍可用的核心能力
 
-OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/signozlogspipeline/signoztailsampler/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigNoz 主链路全程**，精简过程严格保留。
+OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/signozlogspipeline/signoztailsampler/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigInsight 主链路全程**，精简过程严格保留。
 
 本仓库的 `resourcedetection` 是受控精简实现，只注册 `env` 和 `system` detector；配置云厂商 detector（如 `ec2`、`ecs`、`eks`、`gcp`、`azure`）会在加载时返回 `invalid detector key`。
 
@@ -352,7 +352,7 @@ service.pipelines:
 | 问题 | 一句话答案 |
 |---|---|
 | OpAMP 是什么 | OpenTelemetry 定义的 agent 远控协议，WebSocket+Protobuf，本仓只启用"接收远程配置 + 上报状态/健康"几个能力 |
-| 还有什么通信 | **没有了**。SigNoz ↔ collector 直接信道只有 OpAMP；其他都是经 ClickHouse 表共享的数据 + 镜像里附带的 schema migrator DDL |
+| 还有什么通信 | **没有了**。SigInsight ↔ collector 直接信道只有 OpAMP；其他都是经 ClickHouse 表共享的数据 + 镜像里附带的 schema migrator DDL |
 | 删了模块影响 config 吗 | 影响"可以写什么 pipeline"，但**不影响"现在 OpAMP 实际下发的那份 pipeline"**；启动时 config 引用不存在的模块会 fatal，OpAMP 模式下会自动回滚 |
 | config 控制什么 / 怎么生效 | YAML 描述一张有向数据图，启动时按工厂表实例化 → 拓扑序启动各组件 → receiver→processor→exporter 同步链 + exporter 异步队列。**改 config 必须重启 collector 子进程**，OpAMP 自动帮你做 |
 
@@ -365,4 +365,4 @@ service.pipelines:
 1. **看实际生效 config**：`docker exec <collector> cat /var/tmp/collector-config.yaml`（不是 `/etc/otel/config.yaml`！）。
 2. **看 collector 内部指标**：`curl :8888/metrics | grep -E "otelcol_receiver_accepted|otelcol_exporter_sent"`。比例不变 → 上游应用侧流量本身变了；比例变了 → collector 内部行为差异。
 3. **看 OpAMP 是否在管**：`docker logs` 找 `"Applying default config"` / `"Effective config"` 类日志。
-4. **看 SigNoz 后端版本**：compose 的 `signoz/signoz:$VERSION`——后端版本决定下发模板，不是 collector 镜像决定。
+4. **看 SigInsight 后端版本**：compose 的 `ghcr.io/siginsight/siginsight:$VERSION`——后端版本决定下发模板，不是 collector 镜像决定。

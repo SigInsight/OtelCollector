@@ -101,7 +101,7 @@ jobs:
             APT_MIRROR=deb.debian.org
 
   # NOTE: the original pipeline also triggered a downstream `releaser` event in
-  # `charts-saas-v3-staging` via signoz/primus.workflows. That step required
-  # the SigNoz GitHub App tokens which are not available outside SigNoz, so it
+  # `charts-saas-v3-staging` via the upstream private workflow. That step required
+  # the upstream GitHub App tokens which are not available outside the upstream organization, so it
   # has been intentionally omitted in this fork. Re-add it here if you set up
   # equivalent credentials.

@@ -1,10 +1,10 @@
 # Default collector configuration baked into the Docker image at
-# /etc/otel/config.yaml. This mirrors the canonical config that the SigNoz
+# /etc/otel/config.yaml. This mirrors the canonical config that the SigInsight
 # backend pushes via OpAMP, so a fresh `docker run` without OpAMP behaves the
-# same as one driven by SigNoz.
+# same as one driven by SigInsight.
 #
 # In OpAMP mode (--manager-config + --copy-path) this file is only the bootstrap;
-# the SigNoz backend overrides it at runtime with whatever lives in --copy-path.
+# the SigInsight backend overrides it at runtime with whatever lives in --copy-path.
 connectors:
   signozmeter:
     metrics_flush_interval: 1h
