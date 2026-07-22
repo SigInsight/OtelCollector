@@ -18,9 +18,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8seventsreceiver"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	"go.opentelemetry.io/collector/connector"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/debugexporter"
@@ -44,9 +41,6 @@ func Components() (otelcol.Factories, error) {
 	receivers := []receiver.Factory{
 		clickhousesystemtablesreceiver.NewFactory(),
 		hostmetricsreceiver.NewFactory(),
-		k8sclusterreceiver.NewFactory(),
-		k8seventsreceiver.NewFactory(),
-		kubeletstatsreceiver.NewFactory(),
 		prometheusreceiver.NewFactory(),
 	}
 
