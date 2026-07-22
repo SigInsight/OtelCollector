@@ -76,7 +76,7 @@ jobs:
           mkdir -p target/linux-amd64
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -tags="${PROMETHEUS_BUILD_TAGS}" \
-              -o target/linux-amd64/siginsight-otel-collector ./cmd/signozotelcollector
+              -o target/linux-amd64/siginsight-otel-collector ./cmd/siginsightotelcollector
       - uses: docker/setup-buildx-action@v3
       - name: ghcr-login
         uses: docker/login-action@v3
@@ -88,7 +88,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./cmd/signozotelcollector/Dockerfile.multi-arch
+          file: ./cmd/siginsightotelcollector/Dockerfile.multi-arch
           platforms: linux/amd64
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/siginsight-otel-collector:staging-${{ needs.prepare.outputs.version }}
