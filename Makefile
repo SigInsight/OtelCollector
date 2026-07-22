@@ -36,7 +36,7 @@ test:
 
 .PHONY: build
 build:
-	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/siginsight-otel-collector ./cmd/signozotelcollector
+	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/siginsight-otel-collector ./cmd/siginsightotelcollector
 
 .PHONY: amd64
 amd64:
@@ -51,7 +51,7 @@ build-all: amd64 arm64
 
 .PHONY: run
 run:
-	go run -tags="$(PROMETHEUS_BUILD_TAGS)" cmd/signozotelcollector/main.go --config ${CONFIG_FILE}
+	go run -tags="$(PROMETHEUS_BUILD_TAGS)" cmd/siginsightotelcollector/main.go --config ${CONFIG_FILE}
 
 .PHONY: fmt
 fmt:
@@ -64,7 +64,7 @@ build-and-push-siginsight-collector:
 	@echo  "--> Build and push SigInsight collector docker image"
 	@echo "------------------"
 	docker buildx build --platform linux/amd64,linux/arm64 --progress plain \
-		--no-cache --push -f cmd/signozotelcollector/Dockerfile \
+		--no-cache --push -f cmd/siginsightotelcollector/Dockerfile \
 		--tag $(REPONAME)/$(IMAGE_NAME):$(DOCKER_TAG) .
 
 .PHONY: build-siginsight-collector
@@ -73,7 +73,7 @@ build-siginsight-collector:
 	@echo  "--> Build SigInsight collector docker image"
 	@echo "------------------"
 	docker build --build-arg TARGETPLATFORM="linux/amd64" \
-		--no-cache -f cmd/signozotelcollector/Dockerfile --progress plain \
+		--no-cache -f cmd/siginsightotelcollector/Dockerfile --progress plain \
 		--tag $(REPONAME)/$(IMAGE_NAME):$(DOCKER_TAG) .
 
 .PHONY: lint

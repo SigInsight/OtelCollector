@@ -6,7 +6,7 @@ const (
 	BodyPromotedColumn       = "body_promoted"
 	BodyPromotedColumnPrefix = "body_promoted."
 
-	SignozMetadataDB             = "signoz_metadata"
+	SigInsightMetadataDB             = "signoz_metadata"
 	LocalPathTypesTable          = "json_path_types"
 	DistributedPathTypesTable    = "distributed_json_path_types"
 	PathTypesTablePathColumn     = "path"

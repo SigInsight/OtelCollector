@@ -8,7 +8,7 @@ ARG TARGETARCH
 ARG OS="linux"
 ARG ARCH=${TARGETARCH}
 ARG USER_UID=10001
-# Configurable Debian apt mirror; see cmd/signozotelcollector/Dockerfile.
+# Configurable Debian apt mirror; see cmd/siginsightotelcollector/Dockerfile.
 ARG APT_MIRROR=mirrors.aliyun.com
 
 RUN sed -i "s|deb.debian.org|${APT_MIRROR}|g" /etc/apt/sources.list.d/debian.sources && \

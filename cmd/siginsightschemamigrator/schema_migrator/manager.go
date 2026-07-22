@@ -25,13 +25,13 @@ var (
 	ErrDistributionQueueError           = errors.New("distribution_queue has entries with error_count != 0 or is_blocked = 1")
 
 	legacyMigrationsTable = "schema_migrations"
-	SignozLogsDB          = "signoz_logs"
-	SignozMetricsDB       = "signoz_metrics"
-	SignozTracesDB        = "signoz_traces"
-	SignozMetadataDB      = "signoz_metadata"
-	SignozAnalyticsDB     = "signoz_analytics"
-	SignozMeterDB         = "signoz_meter"
-	Databases             = []string{SignozTracesDB, SignozMetricsDB, SignozLogsDB, SignozMetadataDB, SignozAnalyticsDB, SignozMeterDB}
+	SigInsightLogsDB          = "signoz_logs"
+	SigInsightMetricsDB       = "signoz_metrics"
+	SigInsightTracesDB        = "signoz_traces"
+	SigInsightMetadataDB      = "signoz_metadata"
+	SigInsightAnalyticsDB     = "signoz_analytics"
+	SigInsightMeterDB         = "signoz_meter"
+	Databases             = []string{SigInsightTracesDB, SigInsightMetricsDB, SigInsightLogsDB, SigInsightMetadataDB, SigInsightAnalyticsDB, SigInsightMeterDB}
 
 	InProgressStatus = "in-progress"
 	FinishedStatus   = "finished"

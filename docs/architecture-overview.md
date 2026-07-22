@@ -81,7 +81,7 @@ ReportsEffectiveConfig | ReportsHealth
 
 两种方式：
 
-1. **启动时不传 `--manager-config`** → [main.go:59](../cmd/signozotelcollector/main.go#L59) 判空跳过，走 `simpleClient`（[opamp/simple_client.go](../opamp/simple_client.go)），collector 加载本地 `--config` 后**永远不接受远程配置**。
+1. **启动时不传 `--manager-config`** → [main.go:59](../cmd/siginsightotelcollector/main.go#L59) 判空跳过，走 `simpleClient`（[opamp/simple_client.go](../opamp/simple_client.go)），collector 加载本地 `--config` 后**永远不接受远程配置**。
 2. 传了但 server 不可达 → collector 困在 nop 模式。**生产不要这么干。**
 
 ---
@@ -115,7 +115,7 @@ ReportsEffectiveConfig | ReportsHealth
 
 ### Schema 同步（不是运行时通信，但属于 collector ↔ CH 协作）
 
-Collector 二进制内置了 schema migrator 引擎（[cmd/signozschemamigrator/schema_migrator/](../cmd/signozschemamigrator/schema_migrator/)，经 [cmd/signozotelcollector/migrate/](../cmd/signozotelcollector/migrate/) 暴露为 `migrate` 子命令），干 DDL 同步：
+Collector 二进制内置了 schema migrator 引擎（[cmd/siginsightschemamigrator/schema_migrator/](../cmd/siginsightschemamigrator/schema_migrator/)，经 [cmd/siginsightotelcollector/migrate/](../cmd/siginsightotelcollector/migrate/) 暴露为 `migrate` 子命令），干 DDL 同步：
 
 | 子命令 | 作用 |
 |---|---|
@@ -339,7 +339,7 @@ service.pipelines:
 |---|---|
 | 配置解析入口（otel 上游） | `go.opentelemetry.io/collector/otelcol/configprovider.go` |
 | 图构建 | `go.opentelemetry.io/collector/service/internal/graph/` |
-| 本仓的 collector 包装（提供 Restart 给 OpAMP 用） | [signozcol/](../signozcol/) |
+| 本仓的 collector 包装（提供 Restart 给 OpAMP 用） | [siginsightcol/](../siginsightcol/) |
 | 本仓的 reload 协作 | [opamp/server_client.go:301-340](../opamp/server_client.go#L301-L340) |
 | 注册的组件工厂表 | [components/components.go](../components/components.go) |
 | 镜像内置 default config（仅作 OpAMP bootstrap 种子） | [config/collector.yaml](../config/collector.yaml) |

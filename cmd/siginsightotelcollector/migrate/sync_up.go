@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/SigInsight/OtelCollector/cmd/signozotelcollector/config"
-	schemamigrator "github.com/SigInsight/OtelCollector/cmd/signozschemamigrator/schema_migrator"
+	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/config"
+	schemamigrator "github.com/SigInsight/OtelCollector/cmd/siginsightschemamigrator/schema_migrator"
 	"github.com/SigInsight/OtelCollector/constants"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
-type asyncUp struct {
+type syncUp struct {
 	conn             clickhouse.Conn
 	cluster          string
 	migrationManager *schemamigrator.MigrationManager
@@ -22,13 +22,13 @@ type asyncUp struct {
 	logger           *zap.Logger
 }
 
-func registerAsyncUp(parentCmd *cobra.Command, logger *zap.Logger) {
+func registerSyncUp(parentCmd *cobra.Command, logger *zap.Logger) {
 	syncUpCommand := &cobra.Command{
 		Use:          "up",
-		Short:        "Runs 'up' async migrations for the store. Up async migrations are used to apply new async migrations to the store.",
+		Short:        "Runs 'up' sync migrations for the store. Up migrations are used to apply new migrations to the store.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			up, err := newAsyncUp(config.Clickhouse.DSN, config.Clickhouse.Cluster, config.Clickhouse.Replication, config.MigrateSyncUp.Timeout, logger)
+			up, err := newSyncUp(config.Clickhouse.DSN, config.Clickhouse.Cluster, config.Clickhouse.Replication, config.MigrateSyncUp.Timeout, logger)
 			if err != nil {
 				return err
 			}
@@ -42,12 +42,12 @@ func registerAsyncUp(parentCmd *cobra.Command, logger *zap.Logger) {
 		},
 	}
 
-	config.MigrateAsyncUp.RegisterFlags(syncUpCommand)
+	config.MigrateSyncUp.RegisterFlags(syncUpCommand)
 
 	parentCmd.AddCommand(syncUpCommand)
 }
 
-func newAsyncUp(dsn string, cluster string, replication bool, timeout time.Duration, logger *zap.Logger) (*asyncUp, error) {
+func newSyncUp(dsn string, cluster string, replication bool, timeout time.Duration, logger *zap.Logger) (*syncUp, error) {
 	opts, err := clickhouse.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -66,21 +66,21 @@ func newAsyncUp(dsn string, cluster string, replication bool, timeout time.Durat
 		schemamigrator.WithLogger(logger),
 	)
 
-	return &asyncUp{
+	return &syncUp{
 		conn:             conn,
 		cluster:          cluster,
 		migrationManager: migrationManager,
 		timeout:          timeout,
-		logger:           logger.With(zap.String("type", "async"), zap.String("subcommand", "up")),
+		logger:           logger,
 	}, nil
 }
 
-func (cmd *asyncUp) Run(ctx context.Context) error {
+func (cmd *syncUp) Run(ctx context.Context) error {
 	backoff := backoff.NewExponentialBackOff()
 	backoff.MaxElapsedTime = cmd.timeout
 
 	for {
-		err := cmd.Up(ctx)
+		err := cmd.SyncUp(ctx)
 		if err == nil {
 			break
 		}
@@ -88,14 +88,13 @@ func (cmd *asyncUp) Run(ctx context.Context) error {
 		migrateErr := Unwrapb(err)
 		// exit early for non-retryable errors.
 		if !migrateErr.IsRetryable() {
-			return fmt.Errorf("failed to run migrations: %w", err)
+			return fmt.Errorf("failed to run migrations up sync: %w", err)
 		}
 
+		cmd.logger.Info("Error occurred while running migrations up sync, retrying", zap.Error(err))
 		nextBackOff := backoff.NextBackOff()
-		cmd.logger.Info("Retryable error occurred while running migrations", zap.Error(err), zap.Duration("retry_after", nextBackOff))
-
 		if nextBackOff == backoff.Stop {
-			return fmt.Errorf("timed out waiting for migration to complete within the configured timeout of %s", cmd.timeout)
+			return fmt.Errorf("timed out waiting for sync up to complete within the configured timeout of %s", cmd.timeout)
 		}
 
 		time.Sleep(nextBackOff)
@@ -104,14 +103,14 @@ func (cmd *asyncUp) Run(ctx context.Context) error {
 	return nil
 }
 
-func (cmd *asyncUp) Up(ctx context.Context) error {
+func (cmd *syncUp) SyncUp(ctx context.Context) error {
 	err := cmd.runSquashedMigrations(ctx)
 	if err != nil {
 		return err
 	}
 
-	cmd.logger.Info("Running async migrations")
-	err = cmd.run(ctx, schemamigrator.TracesMigrations, schemamigrator.SignozTracesDB)
+	cmd.logger.Info("running sync migrations")
+	err = cmd.run(ctx, schemamigrator.TracesMigrations, schemamigrator.SigInsightTracesDB)
 	if err != nil {
 		return err
 	}
@@ -121,27 +120,27 @@ func (cmd *asyncUp) Up(ctx context.Context) error {
 		logsMigrations = schemamigrator.LogsMigrationsV2
 	}
 
-	err = cmd.run(ctx, logsMigrations, schemamigrator.SignozLogsDB)
+	err = cmd.run(ctx, logsMigrations, schemamigrator.SigInsightLogsDB)
 	if err != nil {
 		return err
 	}
 
-	err = cmd.run(ctx, schemamigrator.MetricsMigrations, schemamigrator.SignozMetricsDB)
+	err = cmd.run(ctx, schemamigrator.MetricsMigrations, schemamigrator.SigInsightMetricsDB)
 	if err != nil {
 		return err
 	}
 
-	err = cmd.run(ctx, schemamigrator.MetadataMigrations, schemamigrator.SignozMetadataDB)
+	err = cmd.run(ctx, schemamigrator.MetadataMigrations, schemamigrator.SigInsightMetadataDB)
 	if err != nil {
 		return err
 	}
 
-	err = cmd.run(ctx, schemamigrator.AnalyticsMigrations, schemamigrator.SignozAnalyticsDB)
+	err = cmd.run(ctx, schemamigrator.AnalyticsMigrations, schemamigrator.SigInsightAnalyticsDB)
 	if err != nil {
 		return err
 	}
 
-	err = cmd.run(ctx, schemamigrator.MeterMigrations, schemamigrator.SignozMeterDB)
+	err = cmd.run(ctx, schemamigrator.MeterMigrations, schemamigrator.SigInsightMeterDB)
 	if err != nil {
 		return err
 	}
@@ -149,11 +148,11 @@ func (cmd *asyncUp) Up(ctx context.Context) error {
 	return nil
 }
 
-func (cmd *asyncUp) runSquashedMigrations(ctx context.Context) error {
+func (cmd *syncUp) runSquashedMigrations(ctx context.Context) error {
 	squashedMigrations := map[string][]schemamigrator.SchemaMigrationRecord{
-		schemamigrator.SignozLogsDB:    schemamigrator.CustomRetentionLogsMigrations,
-		schemamigrator.SignozMetricsDB: schemamigrator.SquashedMetricsMigrations,
-		schemamigrator.SignozTracesDB:  schemamigrator.SquashedTracesMigrations,
+		schemamigrator.SigInsightLogsDB:    schemamigrator.CustomRetentionLogsMigrations,
+		schemamigrator.SigInsightMetricsDB: schemamigrator.SquashedMetricsMigrations,
+		schemamigrator.SigInsightTracesDB:  schemamigrator.SquashedTracesMigrations,
 	}
 
 	for database, migrations := range squashedMigrations {
@@ -179,12 +178,13 @@ func (cmd *asyncUp) runSquashedMigrations(ctx context.Context) error {
 	return nil
 }
 
-func (cmd *asyncUp) run(ctx context.Context, migrations []schemamigrator.SchemaMigrationRecord, db string) error {
+func (cmd *syncUp) run(ctx context.Context, migrations []schemamigrator.SchemaMigrationRecord, db string) error {
 	for _, migration := range migrations {
-		if !cmd.migrationManager.IsAsync(migration) {
+		if !cmd.migrationManager.IsSync(migration) {
 			continue
 		}
 
+		// TODO: Figure out how to run migrations on all shards when replication is not enabled.
 		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, db, migration.MigrationID, schemamigrator.FinishedStatus)
 		if err != nil {
 			return NewRetryableError(err)
@@ -209,7 +209,7 @@ func (cmd *asyncUp) run(ctx context.Context, migrations []schemamigrator.SchemaM
 
 		// if all the operations succeed, mark the migration as finished
 		if err := cmd.migrationManager.InsertMigrationEntry(ctx, db, migration.MigrationID, schemamigrator.FinishedStatus); err != nil {
-			return err
+			return NewRetryableError(err)
 		}
 	}
 

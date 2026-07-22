@@ -1,4 +1,4 @@
-package signozcol
+package siginsightcol
 
 import (
 	"context"

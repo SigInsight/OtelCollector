@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/SigInsight/OtelCollector/signozcol"
+	"github.com/SigInsight/OtelCollector/siginsightcol"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.uber.org/zap"
 )
 
 func TestNopClientWithCollector(t *testing.T) {
-	coll := signozcol.New(signozcol.WrappedCollectorSettings{
+	coll := siginsightcol.New(siginsightcol.WrappedCollectorSettings{
 		ConfigPaths: []string{"testdata/simple/config.yaml"},
 		Version:     "0.0.1",
 		Desc:        "test",
@@ -35,7 +35,7 @@ func TestNopClientWithCollector(t *testing.T) {
 }
 
 func TestNopClientWithCollectorError(t *testing.T) {
-	coll := signozcol.New(signozcol.WrappedCollectorSettings{
+	coll := siginsightcol.New(siginsightcol.WrappedCollectorSettings{
 		ConfigPaths: []string{"testdata/invalid.yaml"},
 		Version:     "0.0.1",
 		Desc:        "test",
@@ -60,7 +60,7 @@ func TestNopClientWithCollectorError(t *testing.T) {
 }
 
 func TestNopClientWithCollectorErrorRead(t *testing.T) {
-	coll := signozcol.New(signozcol.WrappedCollectorSettings{
+	coll := siginsightcol.New(siginsightcol.WrappedCollectorSettings{
 		ConfigPaths: []string{"testdata/invalid.yaml"},
 		Version:     "0.0.1",
 		Desc:        "test",

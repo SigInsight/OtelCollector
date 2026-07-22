@@ -57,7 +57,7 @@ const (
 	distributedLogsResourceV2        = "distributed_logs_v2_resource"
 	distributedLogsAttributeKeys     = "distributed_logs_attribute_keys"
 	distributedLogsResourceKeys      = "distributed_logs_resource_keys"
-	distributedColumnEvolutionTable  = constants.SignozMetadataDB + ".distributed_column_evolution_metadata"
+	distributedColumnEvolutionTable  = constants.SigInsightMetadataDB + ".distributed_column_evolution_metadata"
 	distributedLogsResourceV2Seconds = 1800
 	// language=ClickHouse SQL
 	insertLogsResourceSQLTemplate = `INSERT INTO %s.%s (

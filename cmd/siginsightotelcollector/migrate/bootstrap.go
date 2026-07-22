@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/SigInsight/OtelCollector/cmd/signozotelcollector/config"
-	schemamigrator "github.com/SigInsight/OtelCollector/cmd/signozschemamigrator/schema_migrator"
+	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/config"
+	schemamigrator "github.com/SigInsight/OtelCollector/cmd/siginsightschemamigrator/schema_migrator"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -160,7 +160,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozLogsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightLogsDB, true)
 			if err != nil {
 				return err
 			}
@@ -178,7 +178,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozMetricsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightMetricsDB, true)
 			if err != nil {
 				return err
 			}
@@ -196,7 +196,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozMetricsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightMetricsDB, true)
 			if err != nil {
 				return err
 			}
@@ -214,7 +214,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozMetricsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightMetricsDB, true)
 			if err != nil {
 				return err
 			}
@@ -232,7 +232,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozMetricsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightMetricsDB, true)
 			if err != nil {
 				return err
 			}
@@ -250,7 +250,7 @@ func (cmd *bootstrap) CreateMigrationTables(ctx context.Context) error {
 				continue
 			}
 
-			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SignozMetricsDB, true)
+			err = cmd.migrationManager.RunOperation(ctx, operation, migration.MigrationID, schemamigrator.SigInsightMetricsDB, true)
 			if err != nil {
 				return err
 			}

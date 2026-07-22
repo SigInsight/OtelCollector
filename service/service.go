@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/SigInsight/OtelCollector/opamp"
-	"github.com/SigInsight/OtelCollector/signozcol"
+	"github.com/SigInsight/OtelCollector/siginsightcol"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +28,7 @@ type service struct {
 }
 
 func New(
-	wrappedCollector *signozcol.WrappedCollector,
+	wrappedCollector *siginsightcol.WrappedCollector,
 	logger *zap.Logger,
 	managerConfigPath string,
 	collectorConfigPath string,

@@ -270,7 +270,7 @@ ORDER BY name ASC`,
 		MigrationID: 2001,
 		UpItems: []Operation{
 			CreateTableOperation{
-				Database: SignozMetadataDB,
+				Database: SigInsightMetadataDB,
 				Table:    constants.LocalPathTypesTable,
 				Columns: []Column{
 					{Name: constants.PathTypesTablePathColumn, Type: ColumnTypeString, Codec: "ZSTD(1)"},
@@ -290,7 +290,7 @@ ORDER BY name ASC`,
 				},
 			},
 			CreateTableOperation{
-				Database: SignozMetadataDB,
+				Database: SigInsightMetadataDB,
 				Table:    constants.DistributedPathTypesTable,
 				Columns: []Column{
 					{Name: constants.PathTypesTablePathColumn, Type: ColumnTypeString, Codec: "ZSTD(1)"},
@@ -298,7 +298,7 @@ ORDER BY name ASC`,
 					{Name: constants.PathTypesTableLastSeenColumn, Type: ColumnTypeUInt64, Codec: "DoubleDelta, LZ4"},
 				},
 				Engine: Distributed{
-					Database:    SignozMetadataDB,
+					Database:    SigInsightMetadataDB,
 					Table:       constants.LocalPathTypesTable,
 					ShardingKey: fmt.Sprintf("cityHash64(%s, %s)", constants.PathTypesTablePathColumn, constants.PathTypesTableTypeColumn),
 				},
@@ -444,11 +444,11 @@ ORDER BY name ASC`,
 				Column:   Column{Name: constants.BodyV2Column},
 			},
 			DropTableOperation{
-				Database: SignozMetadataDB,
+				Database: SigInsightMetadataDB,
 				Table:    constants.LocalPathTypesTable,
 			},
 			DropTableOperation{
-				Database: SignozMetadataDB,
+				Database: SigInsightMetadataDB,
 				Table:    constants.DistributedPathTypesTable,
 			},
 		},

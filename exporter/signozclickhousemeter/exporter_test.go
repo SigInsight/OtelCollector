@@ -46,7 +46,7 @@ func Test_prepareBatchSumWithNoRecordedValue(t *testing.T) {
 			unit:        "s",
 			typ:         pmetric.MetricTypeSum,
 			isMonotonic: true,
-			labels:      "{\"__name__\":\"system.cpu.time0\",\"__scope.name__\":\"go.signoz.io/app/reader\",\"__scope.schema_url__\":\"scope.schema_url\",\"__scope.version__\":\"1.0.0\",\"__temporality__\":\"Cumulative\",\"resource.attr_0\":\"value0\",\"scope.attr_0\":\"value0\",\"sum.attr_0\":\"1\"}",
+			labels:      "{\"__name__\":\"system.cpu.time0\",\"__scope.name__\":\"go.siginsight.io/app/reader\",\"__scope.schema_url__\":\"scope.schema_url\",\"__scope.version__\":\"1.0.0\",\"__temporality__\":\"Cumulative\",\"resource.attr_0\":\"value0\",\"scope.attr_0\":\"value0\",\"sum.attr_0\":\"1\"}",
 		},
 	}
 	assert.Equal(t, len(expectedSamples), len(batch.samples))

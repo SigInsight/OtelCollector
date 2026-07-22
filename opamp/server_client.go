@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 
 	"github.com/SigInsight/OtelCollector/constants"
-	"github.com/SigInsight/OtelCollector/signozcol"
+	"github.com/SigInsight/OtelCollector/siginsightcol"
 	"github.com/google/uuid"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
@@ -45,7 +45,7 @@ type serverClient struct {
 type NewServerClientOpts struct {
 	Logger           *zap.Logger
 	Config           *AgentManagerConfig
-	WrappedCollector *signozcol.WrappedCollector
+	WrappedCollector *siginsightcol.WrappedCollector
 
 	CollectorConfigPath string
 }

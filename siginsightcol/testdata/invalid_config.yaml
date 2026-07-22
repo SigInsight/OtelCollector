@@ -2,16 +2,13 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 127.0.0.1:0
       http:
-        endpoint: 127.0.0.1:0
 processors:
   batch:
     send_batch_size: 1000
     timeout: 10s
 extensions:
-  zpages:
-    endpoint: 127.0.0.1:0
+  zpages: {}
 exporters:
   debug:
 service:
@@ -19,14 +16,12 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [batch_processor]
       exporters: [debug]
     metrics:
       receivers: [otlp]
-      processors: [batch]
-      exporters: [debug]
+      processors: [batch_processor]
+      exporters: [signozclickhousemetrics]
   telemetry:
-    metrics:
-      level: none
-    resource:
-      service.instance.id: "signozcol/testdata/config.yaml"
+      resource:
+          service.instance.id: siginsightcol/testdata/invalid_config.yaml

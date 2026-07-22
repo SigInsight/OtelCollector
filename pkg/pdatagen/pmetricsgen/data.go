@@ -22,7 +22,7 @@ func setupResourceAndScope(metrics *pmetric.Metrics, numResourceAttrs, numScopeA
 	for i := 0; i < numScopeAttrs; i++ {
 		sm.Scope().Attributes().PutStr("scope.attr_"+strconv.Itoa(i), scopeValue+strconv.Itoa(i))
 	}
-	sm.Scope().SetName("go.signoz.io/app/reader")
+	sm.Scope().SetName("go.siginsight.io/app/reader")
 	sm.Scope().SetVersion("1.0.0")
 
 	return &rm, &sm

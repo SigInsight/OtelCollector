@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/SigInsight/OtelCollector/signozcol"
+	"github.com/SigInsight/OtelCollector/siginsightcol"
 	"github.com/gorilla/websocket"
 	"github.com/open-telemetry/opamp-go/protobufs"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +66,7 @@ func TestNewClient(t *testing.T) {
 	_, err = NewDynamicConfig(collectorConfigPath, reloadFunc, logger)
 	require.NoError(t, err)
 
-	coll := signozcol.New(signozcol.WrappedCollectorSettings{
+	coll := siginsightcol.New(siginsightcol.WrappedCollectorSettings{
 		ConfigPaths: []string{collectorConfigPath},
 		Version:     "0.0.1-server-client-test",
 	})

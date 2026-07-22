@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/SigInsight/OtelCollector/cmd/signozotelcollector/config"
-	"github.com/SigInsight/OtelCollector/cmd/signozotelcollector/migrate"
+	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/config"
+	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/migrate"
 	"github.com/SigInsight/OtelCollector/constants"
 	"github.com/SigInsight/OtelCollector/service"
-	"github.com/SigInsight/OtelCollector/signozcol"
+	"github.com/SigInsight/OtelCollector/siginsightcol"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -65,8 +65,8 @@ func main() {
 
 			ctx := context.Background()
 
-			coll := signozcol.New(
-				signozcol.WrappedCollectorSettings{
+			coll := siginsightcol.New(
+				siginsightcol.WrappedCollectorSettings{
 					ConfigPaths:  []string{collectorConfig},
 					Version:      constants.Version,
 					Desc:         constants.Desc,
