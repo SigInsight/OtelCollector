@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/confmap/provider/envprovider"
 	"go.opentelemetry.io/collector/confmap/provider/fileprovider"
@@ -51,5 +52,15 @@ func TestDefaultConfigsLoad(t *testing.T) {
 			require.NoError(t, err, "config %s failed to parse against registered factories", rel)
 			require.NoError(t, cfg.Validate(), "config %s failed validation", rel)
 		})
+	}
+}
+
+func TestKubernetesReceiverFactoriesAreNotRegistered(t *testing.T) {
+	factories, err := Components()
+	require.NoError(t, err)
+
+	for _, receiverType := range []string{"k8scluster", "k8sevents", "kubeletstats"} {
+		_, found := factories.Receivers[component.MustNewType(receiverType)]
+		require.Falsef(t, found, "receiver %q must not be registered", receiverType)
 	}
 }
