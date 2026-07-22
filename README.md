@@ -1,1 +1,1 @@
-# SigNoz Otel Collector
+# SigInsight OpenTelemetry Collector

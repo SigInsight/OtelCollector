@@ -60,7 +60,7 @@ jobs:
             --format '{{json .Manifest.Digest}}' | tr -d '"' | sed 's/^sha256://')
           echo "sha=${sha}" >> $GITHUB_OUTPUT
 
-  signoz-otel-collector:
+  siginsight-otel-collector:
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -76,7 +76,7 @@ jobs:
           mkdir -p target/linux-amd64
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -tags="${PROMETHEUS_BUILD_TAGS}" \
-              -o target/linux-amd64/signoz-otel-collector ./cmd/signozotelcollector
+              -o target/linux-amd64/siginsight-otel-collector ./cmd/signozotelcollector
       - uses: docker/setup-buildx-action@v3
       - name: ghcr-login
         uses: docker/login-action@v3
@@ -91,7 +91,7 @@ jobs:
           file: ./cmd/signozotelcollector/Dockerfile.multi-arch
           platforms: linux/amd64
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/signoz-otel-collector:staging-${{ needs.prepare.outputs.version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/siginsight-otel-collector:staging-${{ needs.prepare.outputs.version }}
           # APT_MIRROR override: Dockerfile.multi-arch defaults to
           # mirrors.aliyun.com for in-region builds. GitHub-hosted runners
           # are outside CN, so route apt back through deb.debian.org here.

@@ -1,4 +1,4 @@
-# SigNoz OTel Collector 架构总览
+# SigInsight OpenTelemetry Collector 架构总览
 
 这份文档梳理本 fork 的 collector 在 SigNoz 部署中的**通信信道、配置生效路径、模块裁剪边界**——回答"它到底怎么和 SigNoz 后端协作"这类问题。
 

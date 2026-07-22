@@ -1,6 +1,6 @@
 COMMIT_SHA ?= $(shell git rev-parse HEAD)
-REPONAME ?= signoz
-IMAGE_NAME ?= signoz-otel-collector
+REPONAME ?= siginsight
+IMAGE_NAME ?= siginsight-otel-collector
 CONFIG_FILE ?= ./config/collector.local.yaml
 DOCKER_TAG ?= latest
 
@@ -36,7 +36,7 @@ test:
 
 .PHONY: build
 build:
-	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/signoz-otel-collector ./cmd/signozotelcollector
+	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/siginsight-otel-collector ./cmd/signozotelcollector
 
 .PHONY: amd64
 amd64:
@@ -58,19 +58,19 @@ fmt:
 	@echo Running go fmt on query service ...
 	@$(GOFMT) -e -s -l -w .
 
-.PHONY: build-and-push-signoz-collector
-build-and-push-signoz-collector:
+.PHONY: build-and-push-siginsight-collector
+build-and-push-siginsight-collector:
 	@echo "------------------"
-	@echo  "--> Build and push signoz collector docker image"
+	@echo  "--> Build and push SigInsight collector docker image"
 	@echo "------------------"
 	docker buildx build --platform linux/amd64,linux/arm64 --progress plain \
 		--no-cache --push -f cmd/signozotelcollector/Dockerfile \
 		--tag $(REPONAME)/$(IMAGE_NAME):$(DOCKER_TAG) .
 
-.PHONY: build-signoz-collector
-build-signoz-collector:
+.PHONY: build-siginsight-collector
+build-siginsight-collector:
 	@echo "------------------"
-	@echo  "--> Build signoz collector docker image"
+	@echo  "--> Build SigInsight collector docker image"
 	@echo "------------------"
 	docker build --build-arg TARGETPLATFORM="linux/amd64" \
 		--no-cache -f cmd/signozotelcollector/Dockerfile --progress plain \

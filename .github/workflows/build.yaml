@@ -55,7 +55,7 @@ jobs:
             --format '{{json .Manifest.Digest}}' | tr -d '"' | sed 's/^sha256://')
           echo "sha=${sha}" >> $GITHUB_OUTPUT
 
-  signoz-otel-collector:
+  siginsight-otel-collector:
     needs: prepare
     runs-on: ubuntu-latest
     permissions:
@@ -71,7 +71,7 @@ jobs:
           mkdir -p target/linux-amd64
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
             go build -tags="${PROMETHEUS_BUILD_TAGS}" \
-              -o target/linux-amd64/signoz-otel-collector ./cmd/signozotelcollector
+              -o target/linux-amd64/siginsight-otel-collector ./cmd/signozotelcollector
       - uses: docker/setup-buildx-action@v3
       - name: ghcr-login
         if: needs.prepare.outputs.push == 'true'
@@ -83,7 +83,7 @@ jobs:
       - name: image-tags
         id: tags
         run: |
-          base="${REGISTRY}/${IMAGE_OWNER}/signoz-otel-collector"
+          base="${REGISTRY}/${IMAGE_OWNER}/siginsight-otel-collector"
           tags="${base}:${{ needs.prepare.outputs.version }}"
           if [[ "${{ needs.prepare.outputs.tag_latest }}" == "true" ]]; then
             tags="${tags},${base}:latest"

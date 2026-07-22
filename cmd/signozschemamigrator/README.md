@@ -6,7 +6,7 @@ This is the engine that manages the ClickHouse schema migrations.
 > The standalone `signoz-schema-migrator` binary (and its Docker image) has been
 > removed from this fork. The migration engine in `schema_migrator/` is now run
 > exclusively through the collector's embedded `migrate` subcommand
-> (`signoz-otel-collector migrate ...`). See [Usage](#usage) below.
+> (`siginsight-otel-collector migrate ...`). See [Usage](#usage) below.
 
 ## Why we wrote this?
 
@@ -108,7 +108,7 @@ To add a new migration, you need to find the migration file for the data source 
 ## Usage
 
 The migration engine runs as a subcommand of the collector binary:
-`signoz-otel-collector migrate ...`. It does not expose per-migration `--up`/`--down`
+`siginsight-otel-collector migrate ...`. It does not expose per-migration `--up`/`--down`
 selectors or a `--dev` flag; each subcommand applies all of the migrations it owns
 and records progress in the `schema_migrations_v2` tracking table so reruns are
 idempotent.
@@ -161,15 +161,15 @@ Each subcommand also accepts a `--timeout` flag bounding that single operation
 Bootstrap the databases and tracking tables, then apply all migrations:
 
 ```bash
-signoz-otel-collector migrate bootstrap   --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
-signoz-otel-collector migrate sync up     --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
-signoz-otel-collector migrate async up    --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate bootstrap   --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate sync up     --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate async up    --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
 ```
 
 Gate the collector startup on the synchronous migrations being applied:
 
 ```bash
-signoz-otel-collector migrate sync check  --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate sync check  --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
 ```
 
 In a typical deployment a one-shot migrator job runs

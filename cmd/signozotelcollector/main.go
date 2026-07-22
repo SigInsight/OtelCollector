@@ -29,7 +29,7 @@ func main() {
 	}
 
 	rootCmd := &cobra.Command{
-		Use: "signoz-otel-collector",
+		Use: "siginsight-otel-collector",
 		CompletionOptions: cobra.CompletionOptions{
 			DisableDefaultCmd: true,
 		},
@@ -37,7 +37,7 @@ func main() {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			v := viper.New()
 
-			v.SetEnvPrefix("signoz-otel-collector")
+			v.SetEnvPrefix("siginsight-otel-collector")
 			v.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 			v.AutomaticEnv()
 

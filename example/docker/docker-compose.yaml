@@ -6,7 +6,7 @@
 #   - init-clickhouse                 One-shot helper container (entrypoint kept
 #                                     for parity with upstream SigNoz; the
 #                                     histogram-binary fetch is commented out).
-#   - signoz-telemetrystore-migrator  One-shot. Runs `migrate bootstrap`,
+#   - siginsight-telemetrystore-migrator  One-shot. Runs `migrate bootstrap`,
 #                                     `migrate sync up`, `migrate async up`
 #                                     against ClickHouse. Must succeed before
 #                                     otel-collector can pass its sync-check.
@@ -14,14 +14,14 @@
 #                                     writes to clickhouse.
 #   - signoz                          SigNoz UI on :8081.
 #
-# Both `otel-collector` and `signoz-telemetrystore-migrator` MUST share the
+# Both `otel-collector` and `siginsight-telemetrystore-migrator` MUST share the
 # same image tag, otherwise the migration list embedded in the binary can
 # drift between the two and the collector's `migrate sync check` will fail.
 #
 # Quick start:
 #   cp .env.example .env             # edit OTELCOL_TAG to match the GHCR image
 #   docker compose up -d
-#   docker compose logs -f signoz-otel-collector
+#   docker compose logs -f siginsight-otel-collector
 # UI:
 #   http://<host>:8081
 
@@ -159,24 +159,24 @@ services:
   # waits until telemetrystore-migrator has finished schema bring-up.
   otel-collector:
     !!merge <<: *db-depend
-    image: ghcr.io/${GHCR_OWNER:-siginsight}/signoz-otel-collector:${OTELCOL_TAG:-latest}
-    container_name: signoz-otel-collector
+    image: ghcr.io/${GHCR_OWNER:-siginsight}/siginsight-otel-collector:${OTELCOL_TAG:-latest}
+    container_name: siginsight-otel-collector
     entrypoint: ["/bin/sh"]
     command:
       - -c
       - |
-        /signoz-otel-collector migrate sync check &&
-        /signoz-otel-collector --config=/etc/otel-collector-config.yaml --manager-config=/etc/manager-config.yaml --copy-path=/var/tmp/collector-config.yaml
+        /siginsight-otel-collector migrate sync check &&
+        /siginsight-otel-collector --config=/etc/otel-collector-config.yaml --manager-config=/etc/manager-config.yaml --copy-path=/var/tmp/collector-config.yaml
     volumes:
       - ../../config/collector.yaml:/etc/otel-collector-config.yaml
       - ./common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
     environment:
-      - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
+      - OTEL_RESOURCE_ATTRIBUTES=host.name=siginsight-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
-      - SIGNOZ_OTEL_COLLECTOR_TIMEOUT=10m
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
+      - SIGINSIGHT_OTEL_COLLECTOR_TIMEOUT=10m
     ports:
       # - "1777:1777"     # pprof extension
       - "4317:4317"       # OTLP gRPC
@@ -184,22 +184,22 @@ services:
 
   # One-shot. MUST use the same image tag as otel-collector above so the
   # migration list embedded in the binary stays consistent.
-  signoz-telemetrystore-migrator:
+  siginsight-telemetrystore-migrator:
     !!merge <<: *db-depend
-    image: ghcr.io/${GHCR_OWNER:-siginsight}/signoz-otel-collector:${OTELCOL_TAG:-latest}
-    container_name: signoz-telemetrystore-migrator
+    image: ghcr.io/${GHCR_OWNER:-siginsight}/siginsight-otel-collector:${OTELCOL_TAG:-latest}
+    container_name: siginsight-telemetrystore-migrator
     environment:
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
-      - SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
-      - SIGNOZ_OTEL_COLLECTOR_TIMEOUT=10m
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
+      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
+      - SIGINSIGHT_OTEL_COLLECTOR_TIMEOUT=10m
     entrypoint: ["/bin/sh"]
     command:
       - -c
       - |
-        /signoz-otel-collector migrate bootstrap &&
-        /signoz-otel-collector migrate sync up &&
-        /signoz-otel-collector migrate async up
+        /siginsight-otel-collector migrate bootstrap &&
+        /siginsight-otel-collector migrate sync up &&
+        /siginsight-otel-collector migrate async up
     restart: on-failure
 
 networks:

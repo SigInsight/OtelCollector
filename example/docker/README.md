@@ -1,7 +1,7 @@
 # Example deployment
 
 Single-host docker-compose stack that runs SigNoz with **this fork's
-`signoz-otel-collector`** image (pulled from GHCR) on top of a single-node
+`siginsight-otel-collector`** image (pulled from GHCR) on top of a single-node
 ClickHouse cluster.
 
 ## Layout
@@ -35,7 +35,7 @@ cd example/docker
 cp .env.example .env                      # set OTELCOL_TAG to the GHCR tag
 # put your ClickHouse / opamp / collector configs in place
 docker compose up -d
-docker compose logs -f signoz-otel-collector
+docker compose logs -f siginsight-otel-collector
 ```
 
 Open the UI at <http://localhost:8081>.
@@ -57,14 +57,14 @@ You can also point at a GHCR mirror by overriding the image in
 ```yaml
 services:
   otel-collector:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/signoz-otel-collector:staging-0533e75
-  signoz-telemetrystore-migrator:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/signoz-otel-collector:staging-0533e75
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:staging-0533e75
+  siginsight-telemetrystore-migrator:
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:staging-0533e75
 ```
 
 ## Notes
 
-- `signoz-telemetrystore-migrator` and `signoz-otel-collector` MUST use
+- `siginsight-telemetrystore-migrator` and `siginsight-otel-collector` MUST use
   the same image tag — both bake the schema migration list into the
   binary, and a mismatch will make the collector's `migrate sync check`
   fail or, worse, write into a stale schema. The compose file uses the

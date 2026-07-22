@@ -18,7 +18,7 @@ ARG USER_UID=10001
 USER ${USER_UID}
 
 # copy the binaries from the multi-stage build
-COPY .build/${TARGETOS}-${TARGETARCH}/signoz-otel-collector /signoz-otel-collector
+COPY .build/${TARGETOS}-${TARGETARCH}/siginsight-otel-collector /siginsight-otel-collector
 
 # copy the config file
 COPY config/collector.yaml /etc/otel/config.yaml
@@ -27,5 +27,5 @@ COPY config/collector.yaml /etc/otel/config.yaml
 EXPOSE 4317 4318
 
 # run the binary as the entrypoint and pass the default config file as a flag
-ENTRYPOINT [ "/signoz-otel-collector" ]
+ENTRYPOINT [ "/siginsight-otel-collector" ]
 CMD ["--config", "/etc/otel/config.yaml"]
