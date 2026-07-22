@@ -78,6 +78,12 @@ func newSyncCheck(dsn string, cluster string, replication bool, timeout time.Dur
 }
 
 func (cmd *syncCheck) Run(ctx context.Context) error {
+	if constants.EnableLogsMigrationsV2 {
+		if err := ensureLogsJSONSupport(ctx, cmd.conn); err != nil {
+			return err
+		}
+	}
+
 	backoff := backoff.NewExponentialBackOff()
 	backoff.MaxElapsedTime = cmd.timeout
 

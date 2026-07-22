@@ -17,6 +17,7 @@ func TestLogsMigrationsV2ExactNature(t *testing.T) {
 			LogsMigrationsV2[2],
 			LogsMigrationsV2[4],
 			LogsMigrationsV2[5],
+			LogsMigrationsV2[6],
 		},
 		[]SchemaMigrationRecord{
 			LogsMigrationsV2[0], // 1000 (async)

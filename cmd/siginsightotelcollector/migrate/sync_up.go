@@ -76,6 +76,12 @@ func newSyncUp(dsn string, cluster string, replication bool, timeout time.Durati
 }
 
 func (cmd *syncUp) Run(ctx context.Context) error {
+	if constants.EnableLogsMigrationsV2 {
+		if err := ensureLogsJSONSupport(ctx, cmd.conn); err != nil {
+			return err
+		}
+	}
+
 	backoff := backoff.NewExponentialBackOff()
 	backoff.MaxElapsedTime = cmd.timeout
 
@@ -149,13 +155,17 @@ func (cmd *syncUp) SyncUp(ctx context.Context) error {
 }
 
 func (cmd *syncUp) runSquashedMigrations(ctx context.Context) error {
-	squashedMigrations := map[string][]schemamigrator.SchemaMigrationRecord{
-		schemamigrator.SigInsightLogsDB:    schemamigrator.CustomRetentionLogsMigrations,
-		schemamigrator.SigInsightMetricsDB: schemamigrator.SquashedMetricsMigrations,
-		schemamigrator.SigInsightTracesDB:  schemamigrator.SquashedTracesMigrations,
+	squashedMigrations := []struct {
+		database   string
+		migrations []schemamigrator.SchemaMigrationRecord
+	}{
+		{schemamigrator.SigInsightLogsDB, schemamigrator.CustomRetentionLogsMigrations},
+		{schemamigrator.SigInsightMetricsDB, schemamigrator.SquashedMetricsMigrations},
+		{schemamigrator.SigInsightTracesDB, schemamigrator.SquashedTracesMigrations},
 	}
 
-	for database, migrations := range squashedMigrations {
+	for _, item := range squashedMigrations {
+		database := item.database
 		cmd.logger.Info("checking if should run squashed migrations", zap.String("database", database))
 		should, err := cmd.migrationManager.ShouldRunSquashedV2(ctx, database)
 		if err != nil {
@@ -164,12 +174,12 @@ func (cmd *syncUp) runSquashedMigrations(ctx context.Context) error {
 
 		if !should {
 			cmd.logger.Info("skipping squashed migrations", zap.String("database", database))
-			return nil
+			continue
 		}
 
 		cmd.logger.Info("running squashed migrations", zap.String("database", database))
 
-		err = cmd.run(ctx, migrations, database)
+		err = cmd.run(ctx, item.migrations, database)
 		if err != nil {
 			return err
 		}
