@@ -27,18 +27,17 @@ from Prometheus v0.311.4-0.20260507094802-91c184a899b8.
 It is intentionally not a full Prometheus server or a drop-in replacement for
 all Prometheus configuration. The supported contract is limited to:
 
-- `static_configs`, `file_sd_configs`, `http_sd_configs`, and
-  `kubernetes_sd_configs`;
+- `static_configs`, `file_sd_configs`, and `http_sd_configs`;
 - `scrape_config_files`;
 - scrape HTTP settings, TLS, Basic Auth, Authorization, and OAuth2;
 - target relabeling and metric relabeling;
 - supported scrape protocols, exemplars, classic histograms, and native
   histograms.
 
-All other service discovery mechanisms are unsupported. Remote write, remote
-read, rules, alerting, Target Allocator, and an embedded Prometheus API server
-are also strictly unsupported. Unsupported or unknown configuration fields are
-rejected during configuration decoding.
+All other service discovery mechanisms, including `kubernetes_sd_configs`, are
+unsupported. Remote write, remote read, rules, alerting, Target Allocator, and
+an embedded Prometheus API server are also strictly unsupported. Unsupported or
+unknown configuration fields are rejected during configuration decoding.
 
 ## Limitations
 
@@ -104,24 +103,13 @@ receivers:
             scrape_interval: 5s
             static_configs:
               - targets: ['0.0.0.0:8888']
-          - job_name: k8s
-            kubernetes_sd_configs:
-            - role: pod
-            relabel_configs:
-            - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-              regex: "true"
-              action: keep
-            metric_relabel_configs:
-            - source_labels: [__name__]
-              regex: "(request_duration_seconds.*|response_duration_seconds.*)"
-              action: keep
 ```
 
 ## Configuration
 
 | Field | Default | Description |
 | --- | --- | --- |
-| `config` | | Embedded scrape-only configuration. Supports `global`, `scrape_configs`, `scrape_config_files`, static/file/HTTP/Kubernetes discovery, HTTP client authentication and TLS, relabeling, scrape protocols, and histogram options. |
+| `config` | | Embedded scrape-only configuration. Supports `global`, `scrape_configs`, `scrape_config_files`, static/file/HTTP discovery, HTTP client authentication and TLS, relabeling, scrape protocols, and histogram options. |
 | `trim_metric_suffixes` | `false` | [**Experimental**] Trims unit and some counter type suffixes from metric names, for example `singing_duration_seconds_total` -> `singing_duration`. Useful when trying to restore metric names closer to OpenTelemetry instrumentation. |
 
 At least one of `config.scrape_configs` or `config.scrape_config_files` must be set.
@@ -312,7 +300,6 @@ This section provides guidance for common issues, performance optimization, and 
   - Enable debug-level collector logs to inspect target and scrape errors
 
 4. **Service Discovery Not Working**
-   - For Kubernetes service discovery, verify RBAC permissions for service account
    - Check that service discovery configurations match your environment
    - Review collector logs for service discovery errors
 

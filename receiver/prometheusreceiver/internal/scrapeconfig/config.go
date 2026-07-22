@@ -15,13 +15,11 @@ import (
 	"github.com/alecthomas/units"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/discovery"
-	_ "github.com/prometheus/prometheus/discovery/file"
-	_ "github.com/prometheus/prometheus/discovery/http"
-	_ "github.com/prometheus/prometheus/discovery/kubernetes"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/model/relabel"
 	"go.yaml.in/yaml/v2"
+
+	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapediscovery"
 )
 
 func boolPtr(value bool) *bool { return &value }
@@ -362,7 +360,7 @@ type ScrapeConfig struct {
 	MetricNameEscapingScheme       string                 `yaml:"metric_name_escaping_scheme,omitempty"`
 	ExtraScrapeMetrics             *bool                  `yaml:"extra_scrape_metrics,omitempty"`
 
-	ServiceDiscoveryConfigs discovery.Configs             `yaml:"-"`
+	ServiceDiscoveryConfigs scrapediscovery.Configs       `yaml:"-"`
 	HTTPClientConfig        commonconfig.HTTPClientConfig `yaml:",inline"`
 	RelabelConfigs          []*relabel.Config             `yaml:"relabel_configs,omitempty"`
 	MetricRelabelConfigs    []*relabel.Config             `yaml:"metric_relabel_configs,omitempty"`
@@ -376,7 +374,7 @@ func (c *ScrapeConfig) SetDirectory(dir string) {
 
 func (c *ScrapeConfig) UnmarshalYAML(unmarshal func(any) error) error {
 	*c = DefaultScrapeConfig
-	if err := discovery.UnmarshalYAMLWithInlineConfigs(c, unmarshal); err != nil {
+	if err := scrapediscovery.UnmarshalYAMLWithInlineConfigs(c, unmarshal); err != nil {
 		return err
 	}
 	if c.JobName == "" {
@@ -520,7 +518,7 @@ func (c *ScrapeConfig) Validate(global GlobalConfig) error {
 }
 
 func (c *ScrapeConfig) MarshalYAML() (any, error) {
-	return discovery.MarshalYAMLWithInlineConfigs(c)
+	return scrapediscovery.MarshalYAMLWithInlineConfigs(c)
 }
 
 func (c *ScrapeConfig) ScrapeNativeHistogramsEnabled() bool {
@@ -539,9 +537,9 @@ func (c *ScrapeConfig) ExtraScrapeMetricsEnabled() bool {
 	return c.ExtraScrapeMetrics != nil && *c.ExtraScrapeMetrics
 }
 
-func checkStaticTargets(configs discovery.Configs) error {
+func checkStaticTargets(configs scrapediscovery.Configs) error {
 	for _, discoveryConfig := range configs {
-		staticConfig, ok := discoveryConfig.(discovery.StaticConfig)
+		staticConfig, ok := discoveryConfig.(scrapediscovery.StaticConfig)
 		if !ok {
 			continue
 		}

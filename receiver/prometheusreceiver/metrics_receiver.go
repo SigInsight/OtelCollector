@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	commonconfig "github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/discovery"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componentstatus"
 	"go.opentelemetry.io/collector/consumer"
@@ -27,7 +26,9 @@ import (
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal"
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/metadata"
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrape"
+	scrapelogging "github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrape/logging"
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapeconfig"
+	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapediscovery"
 )
 
 const (
@@ -45,7 +46,7 @@ type pReceiver struct {
 
 	settings          receiver.Settings
 	scrapeManager     *scrape.Manager
-	discoveryManager  *discovery.Manager
+	discoveryManager  *scrapediscovery.Manager
 	registry          *prometheus.Registry
 	registerer        prometheus.Registerer
 	unregisterMetrics func()
@@ -98,16 +99,16 @@ func (r *pReceiver) initPrometheusComponents(
 	opts prometheusComponentTestOptions,
 ) error {
 	// Register the metrics needed by service discovery mechanisms.
-	sdMetrics, err := discovery.CreateAndRegisterSDMetrics(r.registerer)
+	sdMetrics, err := scrapediscovery.CreateAndRegisterSDMetrics(r.registerer)
 	if err != nil {
 		return fmt.Errorf("failed to register service discovery metrics: %w", err)
 	}
 
-	var discoveryManagerTestOptions []func(*discovery.Manager)
+	var discoveryManagerTestOptions []scrapediscovery.ManagerOption
 	if opts.discovery.updatert > 0 {
-		discoveryManagerTestOptions = append(discoveryManagerTestOptions, discovery.Updatert(opts.discovery.updatert))
+		discoveryManagerTestOptions = append(discoveryManagerTestOptions, scrapediscovery.Updatert(opts.discovery.updatert))
 	}
-	r.discoveryManager = discovery.NewManager(ctx, logger, r.registerer, sdMetrics, discoveryManagerTestOptions...)
+	r.discoveryManager = scrapediscovery.NewManager(ctx, logger, r.registerer, sdMetrics, discoveryManagerTestOptions...)
 	if r.discoveryManager == nil {
 		// NewManager can sometimes return nil if it encountered an error, but
 		// the error message is logged separately.
@@ -144,7 +145,7 @@ func (r *pReceiver) initPrometheusComponents(
 			Set(reflect.ValueOf(true))
 	}
 
-	scrapeManager, err := scrape.NewManager(scrapeOpts, logger, nil, nil, store, r.registerer)
+	scrapeManager, err := scrape.NewManager(scrapeOpts, logger, scrapelogging.NewJSONFileLogger, nil, store, r.registerer)
 	if err != nil {
 		return err
 	}
@@ -156,7 +157,7 @@ func (r *pReceiver) initPrometheusComponents(
 	if err != nil {
 		return fmt.Errorf("failed to get scrape configs: %w", err)
 	}
-	discoveryConfigs := make(map[string]discovery.Configs, len(scrapeConfigs))
+	discoveryConfigs := make(map[string]scrapediscovery.Configs, len(scrapeConfigs))
 	for _, scrapeConfig := range scrapeConfigs {
 		discoveryConfigs[scrapeConfig.JobName] = scrapeConfig.ServiceDiscoveryConfigs
 	}
@@ -165,10 +166,6 @@ func (r *pReceiver) initPrometheusComponents(
 	}
 
 	r.unregisterMetrics = func() {
-		sdMetrics.RefreshManager.Unregister()
-		for _, sdMetric := range sdMetrics.MechanismMetrics {
-			sdMetric.Unregister()
-		}
 		r.discoveryManager.UnregisterMetrics()
 		r.scrapeManager.UnregisterMetrics()
 	}

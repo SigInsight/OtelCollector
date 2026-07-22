@@ -7,9 +7,9 @@ DOCKER_TAG ?= latest
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOPATH ?= $(shell go env GOPATH)
-# Keep Prometheus static, file, and HTTP discovery from the minimum plugin set,
-# and explicitly re-enable Kubernetes discovery while excluding other optional SDs.
-PROMETHEUS_BUILD_TAGS ?= remove_all_sd,enable_kubernetes_sd
+# The local Prometheus receiver implements static, file, and HTTP discovery.
+# Exclude all upstream optional service discovery plugins from the build.
+PROMETHEUS_BUILD_TAGS ?= remove_all_sd
 GOTEST=go test -v $(RACE)
 GOFMT=gofmt
 FMT_LOG=.fmt.log

@@ -12,9 +12,8 @@ permissions:
 
 env:
   GO_VERSION: "1.25"
-  # Keep static/file/HTTP discovery and re-enable Kubernetes after removing
-  # all other optional Prometheus service discovery plugins.
-  PROMETHEUS_BUILD_TAGS: remove_all_sd,enable_kubernetes_sd
+  # The local receiver provides static/file/HTTP discovery.
+  PROMETHEUS_BUILD_TAGS: remove_all_sd
   DOCKER_BASE_IMAGE: debian:bookworm-slim
   REGISTRY: ghcr.io
   IMAGE_OWNER: siginsight

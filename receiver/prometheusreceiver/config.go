@@ -10,7 +10,6 @@ import (
 
 	"github.com/goccy/go-yaml"
 	commonconfig "github.com/prometheus/common/config"
-	"github.com/prometheus/prometheus/discovery/kubernetes"
 	"go.opentelemetry.io/collector/confmap"
 
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapeconfig"
@@ -72,13 +71,6 @@ func (cfg *Config) Validate() error {
 		}
 		if err := validateHTTPClientConfig(&scrapeConfig.HTTPClientConfig); err != nil {
 			return err
-		}
-		for _, discoveryConfig := range scrapeConfig.ServiceDiscoveryConfigs {
-			if kubernetesConfig, ok := discoveryConfig.(*kubernetes.SDConfig); ok {
-				if err := validateHTTPClientConfig(&kubernetesConfig.HTTPClientConfig); err != nil {
-					return err
-				}
-			}
 		}
 	}
 

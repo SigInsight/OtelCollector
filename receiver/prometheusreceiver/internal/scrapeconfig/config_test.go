@@ -73,9 +73,6 @@ func TestAllowedDiscoveryConfigs(t *testing.T) {
           client_id: client
           client_secret: secret
           token_url: https://example.com/token`,
-		"kubernetes": `kubernetes_sd_configs:
-      - role: pod
-        kubeconfig_file: kubeconfig`,
 	}
 	for name, discoveryConfig := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -89,8 +86,9 @@ func TestAllowedDiscoveryConfigs(t *testing.T) {
 
 func TestStrictUnknownFields(t *testing.T) {
 	for name, data := range map[string]string{
-		"remote write":  "remote_write:\n  - url: https://example.com\n",
-		"aws discovery": "scrape_configs:\n  - job_name: aws\n    ec2_sd_configs:\n      - region: us-east-1\n",
+		"remote write":         "remote_write:\n  - url: https://example.com\n",
+		"aws discovery":        "scrape_configs:\n  - job_name: aws\n    ec2_sd_configs:\n      - region: us-east-1\n",
+		"kubernetes discovery": "scrape_configs:\n  - job_name: kubernetes\n    kubernetes_sd_configs:\n      - role: pod\n",
 	} {
 		t.Run(name, func(t *testing.T) {
 			_, err := LoadScrapeConfig([]byte(data), t.TempDir())

@@ -21,9 +21,6 @@ func TestConfigUnmarshalAllowedDiscoveryConfigs(t *testing.T) {
 		"http": {
 			"http_sd_configs": []any{map[string]any{"url": "https://example.com/targets"}},
 		},
-		"kubernetes": {
-			"kubernetes_sd_configs": []any{map[string]any{"role": "pod", "kubeconfig_file": "kubeconfig"}},
-		},
 	}
 
 	for name, discoveryConfig := range tests {
@@ -73,6 +70,12 @@ func TestConfigUnmarshalRejectsUnsupportedPrometheusConfig(t *testing.T) {
 			"scrape_configs": []any{map[string]any{
 				"job_name":       "ec2",
 				"ec2_sd_configs": []any{map[string]any{"region": "us-east-1"}},
+			}},
+		},
+		"kubernetes_sd_configs": {
+			"scrape_configs": []any{map[string]any{
+				"job_name":              "kubernetes",
+				"kubernetes_sd_configs": []any{map[string]any{"role": "pod"}},
 			}},
 		},
 	}

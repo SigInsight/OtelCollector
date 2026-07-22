@@ -12,11 +12,10 @@ builds:
   - id: signoz-otel-collector
     binary: bin/signoz-otel-collector
     main: cmd/signozotelcollector/main.go
-    # The minimum plugin set keeps static/file/HTTP discovery; Kubernetes is
-    # explicitly restored after excluding all other optional discovery plugins.
+    # The local receiver provides static/file/HTTP discovery. All upstream
+    # optional service discovery plugins stay excluded.
     tags:
       - remove_all_sd
-      - enable_kubernetes_sd
     goos:
       - linux
       - darwin

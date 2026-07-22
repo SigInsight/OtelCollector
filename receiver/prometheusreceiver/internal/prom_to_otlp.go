@@ -47,47 +47,5 @@ func CreateResource(job, instance string, serviceDiscoveryLabels labels.Labels) 
 	attrs.PutStr(string(conventions.ServerPortKey), port)
 	attrs.PutStr(string(conventions.URLSchemeKey), serviceDiscoveryLabels.Get(model.SchemeLabel))
 
-	addKubernetesResource(attrs, serviceDiscoveryLabels)
-
 	return resource
-}
-
-// kubernetesDiscoveryToResourceAttributes maps from metadata labels discovered
-// through the kubernetes implementation of service discovery to opentelemetry
-// resource attribute keys.
-var kubernetesDiscoveryToResourceAttributes = map[string]string{
-	"__meta_kubernetes_pod_name":           string(conventions.K8SPodNameKey),
-	"__meta_kubernetes_pod_uid":            string(conventions.K8SPodUIDKey),
-	"__meta_kubernetes_pod_container_name": string(conventions.K8SContainerNameKey),
-	"__meta_kubernetes_namespace":          string(conventions.K8SNamespaceNameKey),
-	// Only one of the node name service discovery labels will be present
-	"__meta_kubernetes_pod_node_name":      string(conventions.K8SNodeNameKey),
-	"__meta_kubernetes_node_name":          string(conventions.K8SNodeNameKey),
-	"__meta_kubernetes_endpoint_node_name": string(conventions.K8SNodeNameKey),
-}
-
-// addKubernetesResource adds resource information detected by prometheus'
-// kubernetes service discovery.
-func addKubernetesResource(attrs pcommon.Map, serviceDiscoveryLabels labels.Labels) {
-	for sdKey, attributeKey := range kubernetesDiscoveryToResourceAttributes {
-		if attr := serviceDiscoveryLabels.Get(sdKey); attr != "" {
-			attrs.PutStr(attributeKey, attr)
-		}
-	}
-	controllerName := serviceDiscoveryLabels.Get("__meta_kubernetes_pod_controller_name")
-	controllerKind := serviceDiscoveryLabels.Get("__meta_kubernetes_pod_controller_kind")
-	if controllerKind != "" && controllerName != "" {
-		switch controllerKind {
-		case "ReplicaSet":
-			attrs.PutStr(string(conventions.K8SReplicaSetNameKey), controllerName)
-		case "DaemonSet":
-			attrs.PutStr(string(conventions.K8SDaemonSetNameKey), controllerName)
-		case "StatefulSet":
-			attrs.PutStr(string(conventions.K8SStatefulSetNameKey), controllerName)
-		case "Job":
-			attrs.PutStr(string(conventions.K8SJobNameKey), controllerName)
-		case "CronJob":
-			attrs.PutStr(string(conventions.K8SCronJobNameKey), controllerName)
-		}
-	}
 }

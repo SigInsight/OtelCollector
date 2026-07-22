@@ -19,9 +19,8 @@ permissions:
 
 env:
   GO_VERSION: "1.25"
-  # Match release builds: retain static/file/HTTP and Kubernetes discovery,
-  # while excluding other optional Prometheus service discovery plugins.
-  PROMETHEUS_BUILD_TAGS: remove_all_sd,enable_kubernetes_sd
+  # Match release builds: local static/file/HTTP discovery only.
+  PROMETHEUS_BUILD_TAGS: remove_all_sd
 
 defaults:
   run:

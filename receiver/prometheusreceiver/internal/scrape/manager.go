@@ -29,12 +29,12 @@ import (
 	"github.com/prometheus/common/promslog"
 	"go.uber.org/atomic"
 
+	scrapelogging "github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrape/logging"
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapeconfig"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/labels"
 	"github.com/prometheus/prometheus/storage"
 	"github.com/prometheus/prometheus/util/features"
-	"github.com/prometheus/prometheus/util/logging"
 	"github.com/prometheus/prometheus/util/osutil"
 	"github.com/prometheus/prometheus/util/pool"
 )
@@ -51,7 +51,7 @@ import (
 func NewManager(
 	o *Options,
 	logger *slog.Logger,
-	newScrapeFailureLogger func(string) (*logging.JSONFileLogger, error),
+	newScrapeFailureLogger func(string) (*scrapelogging.JSONFileLogger, error),
 	appendable storage.Appendable,
 	appendableV2 storage.AppendableV2,
 	registerer prometheus.Registerer,
@@ -193,7 +193,7 @@ type Manager struct {
 	mtxScrape              sync.Mutex // Guards the fields below.
 	scrapeConfigs          map[string]*scrapeconfig.ScrapeConfig
 	scrapePools            map[string]*scrapePool
-	newScrapeFailureLogger func(string) (*logging.JSONFileLogger, error)
+	newScrapeFailureLogger func(string) (*scrapelogging.JSONFileLogger, error)
 	scrapeFailureLoggers   map[string]FailureLogger
 	targetSets             map[string][]*targetgroup.Group
 	buffers                *pool.Pool

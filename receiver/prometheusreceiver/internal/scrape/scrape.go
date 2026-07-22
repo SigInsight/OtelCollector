@@ -43,6 +43,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 
+	scrapelogging "github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrape/logging"
 	"github.com/SigInsight/OtelCollector/receiver/prometheusreceiver/internal/scrapeconfig"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/model/exemplar"
@@ -54,7 +55,6 @@ import (
 	"github.com/prometheus/prometheus/model/timestamp"
 	"github.com/prometheus/prometheus/model/value"
 	"github.com/prometheus/prometheus/storage"
-	"github.com/prometheus/prometheus/util/logging"
 	"github.com/prometheus/prometheus/util/namevalidationutil"
 	"github.com/prometheus/prometheus/util/pool"
 )
@@ -71,7 +71,7 @@ var AlignScrapeTimestamps = true
 
 var errNameLabelMandatory = fmt.Errorf("missing metric name (%s label)", model.MetricNameLabel)
 
-var _ FailureLogger = (*logging.JSONFileLogger)(nil)
+var _ FailureLogger = (*scrapelogging.JSONFileLogger)(nil)
 
 // FailureLogger is an interface that can be used to log all failed
 // scrapes.
