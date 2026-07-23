@@ -50,12 +50,12 @@ import (
 )
 
 const (
-	distributedTagAttributesV2       = "distributed_tag_attributes_v2"
-	distributedLogsTableV2           = "distributed_logs_v2"
+	distributedTagAttributesV2       = "tag_attributes_v2"
+	distributedLogsTableV2           = "logs_v2"
 	logsTableV2                      = "logs_v2"
-	distributedLogsResourceV2        = "distributed_logs_v2_resource"
-	distributedLogsAttributeKeys     = "distributed_logs_attribute_keys"
-	distributedLogsResourceKeys      = "distributed_logs_resource_keys"
+	distributedLogsResourceV2        = "logs_v2_resource"
+	distributedLogsAttributeKeys     = "logs_attribute_keys"
+	distributedLogsResourceKeys      = "logs_resource_keys"
 	distributedLogsResourceV2Seconds = 1800
 	// language=ClickHouse SQL
 	insertLogsResourceSQLTemplate = `INSERT INTO %s.%s (

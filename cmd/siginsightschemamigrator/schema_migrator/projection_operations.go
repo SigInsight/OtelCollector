@@ -9,22 +9,6 @@ type CreateProjectionOperation struct {
 	Projection Projection
 }
 
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (c CreateProjectionOperation) OnCluster(cluster string) Operation {
-	c.cluster = cluster
-	return &c
-}
-
-func (c CreateProjectionOperation) WithReplication() Operation {
-	// no-op
-	return &c
-}
-
-func (c CreateProjectionOperation) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, c.Database, c.Table
-}
-
 func (c CreateProjectionOperation) IsMutation() bool {
 	// Create projection is not a mutation.
 	return false
@@ -65,22 +49,6 @@ type DropProjectionOperation struct {
 	Projection Projection
 }
 
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (d DropProjectionOperation) OnCluster(cluster string) Operation {
-	d.cluster = cluster
-	return &d
-}
-
-func (d DropProjectionOperation) WithReplication() Operation {
-	// no-op
-	return &d
-}
-
-func (d DropProjectionOperation) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, d.Database, d.Table
-}
-
 func (d DropProjectionOperation) IsMutation() bool {
 	// Drop projection is not a mutation.
 	return false
@@ -106,10 +74,6 @@ func (d DropProjectionOperation) ToSQL() string {
 	sql.WriteString(d.Database)
 	sql.WriteString(".")
 	sql.WriteString(d.Table)
-	if d.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(d.cluster)
-	}
 	sql.WriteString(" DROP PROJECTION IF EXISTS ")
 	sql.WriteString(d.Projection.Name)
 	return sql.String()

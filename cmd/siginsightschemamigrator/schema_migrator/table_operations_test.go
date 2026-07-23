@@ -302,14 +302,13 @@ func TestCreateWithCluster(t *testing.T) {
 					},
 				},
 			},
-			want: "CREATE TABLE IF NOT EXISTS db.table ON CLUSTER cluster (id Int16) ENGINE = ReplacingMergeTree ORDER BY id",
+			want: "CREATE TABLE IF NOT EXISTS db.table (id Int16) ENGINE = ReplacingMergeTree ORDER BY id",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			op := tc.op.OnCluster("cluster")
-			require.Equal(t, tc.want, op.ToSQL())
+			require.Equal(t, tc.want, tc.op.ToSQL())
 		})
 	}
 }
@@ -327,15 +326,6 @@ func TestTruncateTable(t *testing.T) {
 				Table:    "table",
 			},
 			want: "TRUNCATE TABLE IF EXISTS db.table",
-		},
-		{
-			name: "truncate-table-with-cluster",
-			op: TruncateTableOperation{
-				Database: "db",
-				Table:    "table",
-				cluster:  "cluster",
-			},
-			want: "TRUNCATE TABLE IF EXISTS db.table ON CLUSTER cluster",
 		},
 	}
 
@@ -361,16 +351,6 @@ func TestAlterTableModifyTTL(t *testing.T) {
 			},
 			want: "ALTER TABLE db.table MODIFY TTL ts + INTERVAL 1 DAY SETTINGS materialize_ttl_after_modify = 0",
 		},
-		{
-			name: "alter-table-modify-ttl-with-cluster",
-			op: AlterTableModifyTTL{
-				Database: "db",
-				Table:    "table",
-				TTL:      "ts + INTERVAL 1 DAY",
-				cluster:  "cluster",
-			},
-			want: "ALTER TABLE db.table ON CLUSTER cluster MODIFY TTL ts + INTERVAL 1 DAY SETTINGS materialize_ttl_after_modify = 0",
-		},
 	}
 
 	for _, tc := range testCases {
@@ -393,15 +373,6 @@ func TestAlterTableDropTTL(t *testing.T) {
 				Table:    "table",
 			},
 			want: "ALTER TABLE db.table REMOVE TTL",
-		},
-		{
-			name: "alter-table-drop-ttl-with-cluster",
-			op: AlterTableDropTTL{
-				Database: "db",
-				Table:    "table",
-				cluster:  "cluster",
-			},
-			want: "ALTER TABLE db.table ON CLUSTER cluster REMOVE TTL",
 		},
 	}
 

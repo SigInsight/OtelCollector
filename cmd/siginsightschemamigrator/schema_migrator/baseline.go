@@ -49,15 +49,15 @@ type BaselineInspection struct {
 }
 
 const baselineInventoryQuery = `SELECT
-	countIf(name NOT IN ('schema_migrations', 'schema_migrations_v2', 'distributed_schema_migrations_v2')),
+	countIf(name NOT IN ('schema_migrations', 'schema_migrations_v2')),
 	countIf(name = 'schema_migrations'),
-	countIf(name IN ('schema_migrations_v2', 'distributed_schema_migrations_v2'))
+	countIf(name = 'schema_migrations_v2')
 FROM system.tables
 WHERE database = $1`
 
 func baselineMigrationsQuery(database string) string {
 	return fmt.Sprintf(
-		"SELECT migration_id, status FROM %s.distributed_schema_migrations_v2 SETTINGS final = 1",
+		"SELECT migration_id, status FROM %s.schema_migrations_v2 SETTINGS final = 1",
 		database,
 	)
 }
@@ -97,7 +97,7 @@ func (m *MigrationManager) InspectBaselineState(ctx context.Context, spec Baseli
 	}
 	snapshot.LegacyTableExists = legacyTableCount > 0
 
-	if snapshot.TrackingTableCount == 2 {
+	if snapshot.TrackingTableCount == 1 {
 		rows, err := m.conn.Query(ctx, baselineMigrationsQuery(spec.Database))
 		if err != nil {
 			return BaselineInspection{}, fmt.Errorf("inspect migrations for database %s: %w", spec.Database, err)
@@ -181,7 +181,7 @@ func ClassifyBaselineState(spec BaselineSpec, snapshot BaselineSnapshot) Baselin
 	}
 
 	if snapshot.DomainTableCount == 0 ||
-		snapshot.TrackingTableCount != 2 ||
+		snapshot.TrackingTableCount != 1 ||
 		len(result.MissingMigrationIDs) > 0 ||
 		len(result.NonFinishedMigrationIDs) > 0 {
 		result.State = BaselineStatePartial

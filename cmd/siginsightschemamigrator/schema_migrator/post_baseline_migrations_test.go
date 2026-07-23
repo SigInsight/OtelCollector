@@ -69,7 +69,7 @@ func TestV1BaselineAllowsRegisteredPostBaselineIDs(t *testing.T) {
 	}
 	inspection := ClassifyBaselineState(spec, BaselineSnapshot{
 		DomainTableCount:   1,
-		TrackingTableCount: 2,
+		TrackingTableCount: 1,
 		MigrationStatuses: map[uint64]string{
 			V1BaselineMigrationID: FinishedStatus,
 			2000:                  FinishedStatus,

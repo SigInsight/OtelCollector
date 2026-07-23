@@ -106,7 +106,7 @@ ReportsEffectiveConfig | ReportsHealth
 |---|---|---|---|
 | traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `signoz_traces.signoz_index_v3` 等 |
 | metrics 主数据 | collector (`signozclickhousemetrics`) | SigInsight UI 后端 | `signoz_metrics.*` |
-| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `signoz_logs.distributed_logs_v2` |
+| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `signoz_logs.logs_v2` |
 | **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigInsight UI 后端 | `signoz_metadata.*` |
 | **meter**（用量/计费指标）| collector (`signozclickhousemeter`，经 `signozmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `signoz_meter.*` |
 | span metrics（RED 指标，由 spans 衍生）| collector (`signozspanmetricsprocessor` → `signozclickhousemetrics`) | SigInsight UI 后端（Service Map 等） | `signoz_metrics.*` |

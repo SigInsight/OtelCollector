@@ -2,7 +2,7 @@
 
 Single-host docker-compose stack that runs SigInsight with **this fork's
 `siginsight-otel-collector`** image (pulled from GHCR) on top of a single-node
-ClickHouse cluster.
+single-node ClickHouse instance.
 
 ## Layout
 
@@ -72,5 +72,5 @@ services:
 - The amd64 image is the only one this fork's CI builds. On arm64 hosts
   you'll need to re-enable arm64 in `.github/workflows/build.yaml` and
   rebuild.
-- Data volumes (`siginsight-clickhouse`, `siginsight-sqlite`, `siginsight-zookeeper-1`)
+- Data volumes (`siginsight-clickhouse`, `siginsight-sqlite`)
   persist across `docker compose down`. Use `down -v` to wipe.

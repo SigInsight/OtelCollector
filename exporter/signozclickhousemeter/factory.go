@@ -56,6 +56,6 @@ func createDefaultConfig() component.Config {
 		QueueBatchConfig: configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 		DSN:              "tcp://localhost:9000",
 		Database:         "signoz_meter",
-		SamplesTable:     "distributed_samples",
+		SamplesTable:     "samples",
 	}
 }

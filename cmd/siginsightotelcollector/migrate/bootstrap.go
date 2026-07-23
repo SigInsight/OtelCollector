@@ -15,7 +15,6 @@ import (
 
 type bootstrap struct {
 	conn             clickhouse.Conn
-	cluster          string
 	migrationManager *schemamigrator.MigrationManager
 	timeout          time.Duration
 	logger           *zap.Logger
@@ -26,7 +25,7 @@ func registerBootstrap(parentCmd *cobra.Command, logger *zap.Logger) {
 		Use:   "bootstrap",
 		Short: "Creates the necessary tables to track status of migrations. A migration table is typically created to track the status of migrations. This command creates the necessary tables to track the status of migrations.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bootstrap, err := newBootstrap(config.Clickhouse.DSN, config.Clickhouse.Cluster, config.Clickhouse.Replication, config.MigrateBootstrap.Timeout, logger)
+			bootstrap, err := newBootstrap(config.Clickhouse.DSN, config.MigrateBootstrap.Timeout, logger)
 			if err != nil {
 				return err
 			}
@@ -43,7 +42,7 @@ func registerBootstrap(parentCmd *cobra.Command, logger *zap.Logger) {
 	parentCmd.AddCommand(cmd)
 }
 
-func newBootstrap(dsn string, cluster string, replication bool, timeout time.Duration, logger *zap.Logger) (*bootstrap, error) {
+func newBootstrap(dsn string, timeout time.Duration, logger *zap.Logger) (*bootstrap, error) {
 	opts, err := clickhouse.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -55,10 +54,7 @@ func newBootstrap(dsn string, cluster string, replication bool, timeout time.Dur
 	}
 
 	migrationManager, err := schemamigrator.NewMigrationManager(
-		schemamigrator.WithClusterName(cluster),
-		schemamigrator.WithReplicationEnabled(replication),
 		schemamigrator.WithConn(conn),
-		schemamigrator.WithConnOptions(*opts),
 		schemamigrator.WithLogger(logger),
 	)
 	if err != nil {
@@ -67,7 +63,6 @@ func newBootstrap(dsn string, cluster string, replication bool, timeout time.Dur
 
 	return &bootstrap{
 		conn:             conn,
-		cluster:          cluster,
 		migrationManager: migrationManager,
 		timeout:          timeout,
 		logger:           logger,
@@ -136,7 +131,7 @@ func (cmd *bootstrap) CreateDatabases(ctx context.Context) error {
 
 	for _, database := range schemamigrator.Databases {
 		if _, ok := databases[database]; !ok {
-			command := fmt.Sprintf("CREATE DATABASE %s ON CLUSTER %s", database, cmd.cluster)
+			command := fmt.Sprintf("CREATE DATABASE %s", database)
 			if err := cmd.conn.Exec(ctx, command); err != nil {
 				return err
 			}

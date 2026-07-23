@@ -5,8 +5,6 @@ import "strings"
 // InsertIntoTable represents an INSERT INTO statement.
 // InsertIntoTable can only be used for INSERTs into ReplacingMergeTree tables as of now.
 type InsertIntoTable struct {
-	cluster string
-
 	Database    string
 	Table       string
 	Columns     []string
@@ -16,22 +14,6 @@ type InsertIntoTable struct {
 	// for example: "('col1', 123), ('col2', 456)".
 	// The caller is responsible for proper formatting and escaping.
 	Values string
-}
-
-// OnCluster is a no-op for INSERTs (ClickHouse does not support INSERT ... ON CLUSTER).
-func (i InsertIntoTable) OnCluster(cluster string) Operation {
-	i.cluster = cluster
-	return &i
-}
-
-// WithReplication is a no-op for this operation.
-func (i InsertIntoTable) WithReplication() Operation {
-	return &i
-}
-
-// ShouldWaitForDistributionQueue returns false as INSERTs do not start DDL queues.
-func (i InsertIntoTable) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, i.Database, i.Table
 }
 
 // IsMutation returns false (does not alter existing data parts).

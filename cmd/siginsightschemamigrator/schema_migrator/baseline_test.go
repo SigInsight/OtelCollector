@@ -28,7 +28,7 @@ func TestClassifyBaselineState(t *testing.T) {
 		{
 			name: "empty",
 			snapshot: BaselineSnapshot{
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses:  map[uint64]string{},
 			},
 			state: BaselineStateEmpty,
@@ -37,7 +37,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			name: "complete fresh",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
 					1000: FinishedStatus, 1001: FinishedStatus,
@@ -50,7 +50,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
 				LegacyTableExists:  true,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					1000: FinishedStatus, 1001: FinishedStatus,
 				},
@@ -61,7 +61,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			name: "missing migration",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
 					1000: FinishedStatus,
@@ -74,7 +74,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			name: "failed migration",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
 					1000: FinishedStatus, 1001: FailedStatus,
@@ -87,7 +87,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			name: "incomplete tracking tables",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 1,
+				TrackingTableCount: 0,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
 					1000: FinishedStatus, 1001: FinishedStatus,
@@ -99,7 +99,7 @@ func TestClassifyBaselineState(t *testing.T) {
 			name: "database ahead of baseline",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
 					1000: FinishedStatus, 1001: FinishedStatus,
@@ -138,7 +138,7 @@ func TestInspectBaselineState(t *testing.T) {
 			{Name: "legacy_tables", Type: "UInt64"},
 			{Name: "tracking_tables", Type: "UInt64"},
 		},
-		[]any{uint64(1), uint64(0), uint64(2)},
+		[]any{uint64(1), uint64(0), uint64(1)},
 	)
 	conn.ExpectQueryRow(baselineInventoryQuery).WillReturnRow(inventoryRow)
 

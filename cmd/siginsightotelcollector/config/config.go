@@ -34,15 +34,11 @@ func (cfg *collector) RegisterFlags(cmd *cobra.Command) {
 }
 
 type clickhouse struct {
-	DSN         string
-	Cluster     string
-	Replication bool
+	DSN string
 }
 
 func (cfg *clickhouse) RegisterFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&cfg.DSN, "clickhouse-dsn", "tcp://0.0.0.0:9001", "DSN for clickhouse connection")
-	cmd.PersistentFlags().StringVar(&cfg.Cluster, "clickhouse-cluster", "cluster", "Name of the clickhouse cluster to connect")
-	cmd.PersistentFlags().BoolVar(&cfg.Replication, "clickhouse-replication", true, "Set true if replication is enabled in the clickhouse cluster")
 }
 
 type migrateReady struct {
