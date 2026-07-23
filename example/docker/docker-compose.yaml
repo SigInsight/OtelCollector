@@ -2,7 +2,6 @@
 #
 # What this file deploys:
 #   - clickhouse (single node)        Schema-less columnar store. Persistent volume.
-#   - zookeeper-1                     Required by clickhouse-keeper / ON CLUSTER DDL.
 #   - init-clickhouse                 One-shot helper container (entrypoint kept
 #                                     for parity with the upstream stack; the
 #                                     histogram-binary fetch is commented out).
@@ -45,8 +44,6 @@ x-clickhouse-defaults: &clickhouse-defaults
   depends_on:
     init-clickhouse:
       condition: service_completed_successfully
-    zookeeper-1:
-      condition: service_healthy
   healthcheck:
     test: ["CMD", "wget", "--spider", "-q", "0.0.0.0:8123/ping"]
     interval: 30s
@@ -59,22 +56,6 @@ x-clickhouse-defaults: &clickhouse-defaults
       hard: 262144
   environment:
     - CLICKHOUSE_SKIP_USER_SETUP=1
-
-x-zookeeper-defaults: &zookeeper-defaults
-  !!merge <<: *common
-  image: signoz/zookeeper:3.7.1
-  user: root
-  labels:
-    siginsight.io/scrape: "true"
-    siginsight.io/port: "9141"
-    siginsight.io/path: "/metrics"
-  healthcheck:
-    test:
-      - CMD-SHELL
-      - curl -s -m 2 http://localhost:8080/commands/ruok | grep error | grep null
-    interval: 30s
-    timeout: 5s
-    retries: 3
 
 x-db-depend: &db-depend
   !!merge <<: *common
@@ -102,18 +83,6 @@ services:
     volumes:
       - ./common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
 
-  zookeeper-1:
-    !!merge <<: *zookeeper-defaults
-    container_name: siginsight-zookeeper-1
-    volumes:
-      - zookeeper-1:/bitnami/zookeeper
-    environment:
-      - ZOO_SERVER_ID=1
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - ZOO_AUTOPURGE_INTERVAL=1
-      - ZOO_ENABLE_PROMETHEUS_METRICS=yes
-      - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
-
   clickhouse:
     !!merge <<: *clickhouse-defaults
     container_name: siginsight-clickhouse
@@ -127,7 +96,6 @@ services:
       - ./common/clickhouse/users.xml:/etc/clickhouse-server/users.xml
       - ./common/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - ./common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
-      - ./common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse:/var/lib/clickhouse/
       # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
 
@@ -170,8 +138,6 @@ services:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=siginsight-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
       - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
-      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
-      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
       - SIGINSIGHT_OTEL_COLLECTOR_TIMEOUT=10m
     ports:
       # - "1777:1777"     # pprof extension
@@ -186,8 +152,6 @@ services:
     container_name: siginsight-telemetrystore-migrator
     environment:
       - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_DSN=tcp://clickhouse:9000
-      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER=cluster
-      - SIGINSIGHT_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION=true
       - SIGINSIGHT_OTEL_COLLECTOR_TIMEOUT=10m
     entrypoint: ["/bin/sh"]
     command:
@@ -211,5 +175,3 @@ volumes:
     name: siginsight-clickhouse
   sqlite:
     name: siginsight-sqlite
-  zookeeper-1:
-    name: siginsight-zookeeper-1

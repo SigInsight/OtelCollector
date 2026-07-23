@@ -9,8 +9,6 @@ import (
 type TableEngine interface {
 	ToSQL() string
 	EngineType() string
-	OnCluster(cluster string) TableEngine
-	WithReplication() TableEngine
 }
 
 // TableSetting represents the setting of the table.
@@ -35,23 +33,12 @@ func (t TableSettings) ToSQL() string {
 
 // MergeTree represents the MergeTree engine of the table.
 type MergeTree struct {
-	Replicated  bool
 	OrderBy     string
 	PrimaryKey  string
 	PartitionBy string
 	SampleBy    string
 	TTL         string
 	Settings    TableSettings
-}
-
-func (m MergeTree) OnCluster(cluster string) TableEngine {
-	// no-op
-	return &m
-}
-
-func (m MergeTree) WithReplication() TableEngine {
-	m.Replicated = true
-	return &m
 }
 
 func (m MergeTree) EngineParams() string {
@@ -90,33 +77,14 @@ func (m MergeTree) ToSQL() string {
 	return sql.String()
 }
 
-func (m MergeTree) EngineType() string {
-	if m.Replicated {
-		return "ReplicatedMergeTree"
-	}
-	return "MergeTree"
-}
+func (m MergeTree) EngineType() string { return "MergeTree" }
 
 // Replacing represents the ReplacingMergeTree engine of the table.
 type ReplacingMergeTree struct {
 	MergeTree
 }
 
-func (r ReplacingMergeTree) OnCluster(cluster string) TableEngine {
-	return &r
-}
-
-func (r ReplacingMergeTree) WithReplication() TableEngine {
-	r.Replicated = true
-	return &r
-}
-
-func (r ReplacingMergeTree) EngineType() string {
-	if r.Replicated {
-		return "ReplicatedReplacingMergeTree"
-	}
-	return "ReplacingMergeTree"
-}
+func (r ReplacingMergeTree) EngineType() string { return "ReplacingMergeTree" }
 
 func (r ReplacingMergeTree) ToSQL() string {
 	var sql strings.Builder
@@ -130,21 +98,7 @@ type AggregatingMergeTree struct {
 	MergeTree
 }
 
-func (a AggregatingMergeTree) OnCluster(cluster string) TableEngine {
-	return &a
-}
-
-func (a AggregatingMergeTree) WithReplication() TableEngine {
-	a.Replicated = true
-	return &a
-}
-
-func (a AggregatingMergeTree) EngineType() string {
-	if a.Replicated {
-		return "ReplicatedAggregatingMergeTree"
-	}
-	return "AggregatingMergeTree"
-}
+func (a AggregatingMergeTree) EngineType() string { return "AggregatingMergeTree" }
 
 func (a AggregatingMergeTree) ToSQL() string {
 	var sql strings.Builder
@@ -157,55 +111,11 @@ type SummingMergeTree struct {
 	MergeTree
 }
 
-func (s SummingMergeTree) OnCluster(cluster string) TableEngine {
-	return &s
-}
-
-func (s SummingMergeTree) WithReplication() TableEngine {
-	s.Replicated = true
-	return &s
-}
-
-func (s SummingMergeTree) EngineType() string {
-	if s.Replicated {
-		return "ReplicatedSummingMergeTree"
-	}
-	return "SummingMergeTree"
-}
+func (s SummingMergeTree) EngineType() string { return "SummingMergeTree" }
 
 func (s SummingMergeTree) ToSQL() string {
 	var sql strings.Builder
 	sql.WriteString(s.EngineType())
 	sql.WriteString(s.EngineParams())
 	return sql.String()
-}
-
-// Distributed represents the Distributed engine of the table.
-type Distributed struct {
-	Cluster     string
-	Database    string
-	Table       string
-	ShardingKey string
-}
-
-func (d Distributed) OnCluster(cluster string) TableEngine {
-	d.Cluster = cluster
-	return &d
-}
-
-func (d Distributed) WithReplication() TableEngine {
-	// no-op
-	return &d
-}
-
-func (d Distributed) EngineType() string {
-	return "Distributed"
-}
-
-func (d Distributed) EngineParams() string {
-	return ""
-}
-
-func (d Distributed) ToSQL() string {
-	return fmt.Sprintf("Distributed('%s', %s, %s, %s)", d.Cluster, d.Database, d.Table, d.ShardingKey)
 }

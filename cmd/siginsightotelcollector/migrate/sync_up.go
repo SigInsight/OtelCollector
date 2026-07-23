@@ -25,7 +25,7 @@ func registerSyncUp(parentCmd *cobra.Command, logger *zap.Logger) {
 		Short:        "Runs 'up' sync migrations for the store. Up migrations are used to apply new migrations to the store.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			up, err := newSyncUp(config.Clickhouse.DSN, config.Clickhouse.Cluster, config.Clickhouse.Replication, config.MigrateSyncUp.Timeout, logger)
+			up, err := newSyncUp(config.Clickhouse.DSN, config.MigrateSyncUp.Timeout, logger)
 			if err != nil {
 				return err
 			}
@@ -44,7 +44,7 @@ func registerSyncUp(parentCmd *cobra.Command, logger *zap.Logger) {
 	parentCmd.AddCommand(syncUpCommand)
 }
 
-func newSyncUp(dsn string, cluster string, replication bool, timeout time.Duration, logger *zap.Logger) (*syncUp, error) {
+func newSyncUp(dsn string, timeout time.Duration, logger *zap.Logger) (*syncUp, error) {
 	opts, err := clickhouse.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -56,10 +56,7 @@ func newSyncUp(dsn string, cluster string, replication bool, timeout time.Durati
 	}
 
 	migrationManager, err := schemamigrator.NewMigrationManager(
-		schemamigrator.WithClusterName(cluster),
-		schemamigrator.WithReplicationEnabled(replication),
 		schemamigrator.WithConn(conn),
-		schemamigrator.WithConnOptions(*opts),
 		schemamigrator.WithLogger(logger),
 	)
 

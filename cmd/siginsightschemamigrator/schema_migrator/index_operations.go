@@ -55,27 +55,9 @@ func (i Index) ToSQL() string {
 // AlterTableAddIndex is used to add an index to a table.
 // It is used to represent the ALTER TABLE ADD INDEX statement in the SQL.
 type AlterTableAddIndex struct {
-	cluster string
-
 	Database string
 	Table    string
 	Index    Index
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableAddIndex) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableAddIndex) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableAddIndex) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableAddIndex) IsMutation() bool {
@@ -103,10 +85,6 @@ func (a AlterTableAddIndex) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" ADD INDEX IF NOT EXISTS ")
 	sql.WriteString(a.Index.Name)
 	sql.WriteString(" ")
@@ -121,26 +99,9 @@ func (a AlterTableAddIndex) ToSQL() string {
 // AlterTableDropIndex is used to drop an index from a table.
 // It is used to represent the ALTER TABLE DROP INDEX statement in the SQL.
 type AlterTableDropIndex struct {
-	cluster  string
 	Database string
 	Table    string
 	Index    Index
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableDropIndex) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableDropIndex) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableDropIndex) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableDropIndex) IsMutation() bool {
@@ -168,10 +129,6 @@ func (a AlterTableDropIndex) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" DROP INDEX IF EXISTS ")
 	sql.WriteString(a.Index.Name)
 	return sql.String()
@@ -185,22 +142,6 @@ type AlterTableMaterializeIndex struct {
 	Table     string
 	Index     Index
 	Partition string
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableMaterializeIndex) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableMaterializeIndex) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableMaterializeIndex) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableMaterializeIndex) IsMutation() bool {
@@ -228,10 +169,6 @@ func (a AlterTableMaterializeIndex) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MATERIALIZE INDEX IF EXISTS ")
 	sql.WriteString(a.Index.Name)
 	if a.Partition != "" {
@@ -249,22 +186,6 @@ type AlterTableClearIndex struct {
 	Table     string
 	Index     Index
 	Partition string
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableClearIndex) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableClearIndex) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableClearIndex) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableClearIndex) IsMutation() bool {
@@ -292,10 +213,6 @@ func (a AlterTableClearIndex) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" CLEAR INDEX IF EXISTS ")
 	sql.WriteString(a.Index.Name)
 	if a.Partition != "" {

@@ -7,8 +7,6 @@ import (
 // AlterTableAddColumn is used to add a column to a table.
 // It is used to represent the ALTER TABLE ADD COLUMN statement in the SQL.
 type AlterTableAddColumn struct {
-	cluster string
-
 	Database string
 	Table    string
 	Column   Column
@@ -17,24 +15,8 @@ type AlterTableAddColumn struct {
 	After *Column
 }
 
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableAddColumn) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableAddColumn) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
 func (a AlterTableAddColumn) ForceMigrate() bool {
 	return false
-}
-
-func (a AlterTableAddColumn) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableAddColumn) IsMutation() bool {
@@ -58,10 +40,6 @@ func (a AlterTableAddColumn) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" ADD COLUMN IF NOT EXISTS ")
 	sql.WriteString(a.Column.ToSQL())
 	if a.After != nil {
@@ -74,26 +52,9 @@ func (a AlterTableAddColumn) ToSQL() string {
 // AlterTableDropColumn is used to drop a column from a table.
 // It is used to represent the ALTER TABLE DROP COLUMN statement in the SQL.
 type AlterTableDropColumn struct {
-	cluster  string
 	Database string
 	Table    string
 	Column   Column
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableDropColumn) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableDropColumn) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableDropColumn) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return true, a.Database, a.Table
 }
 
 func (a AlterTableDropColumn) IsMutation() bool {
@@ -122,10 +83,6 @@ func (a AlterTableDropColumn) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" DROP COLUMN IF EXISTS ")
 	sql.WriteString(a.Column.Name)
 	return sql.String()
@@ -134,27 +91,9 @@ func (a AlterTableDropColumn) ToSQL() string {
 // AlterTableModifyColumn is used to modify a column in a table.
 // It is used to represent the ALTER TABLE MODIFY COLUMN statement in the SQL.
 type AlterTableModifyColumn struct {
-	cluster string
-
 	Database string
 	Table    string
 	Column   Column
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableModifyColumn) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableModifyColumn) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableModifyColumn) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableModifyColumn) IsMutation() bool {
@@ -184,10 +123,6 @@ func (a AlterTableModifyColumn) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MODIFY COLUMN IF EXISTS ")
 	sql.WriteString(a.Column.Name)
 	if a.Column.Type != nil {
@@ -217,33 +152,14 @@ func (a AlterTableModifyColumn) ToSQL() string {
 // AlterTableModifyColumnRemove is used to remove one of the column properties
 // See https://clickhouse.com/docs/en/sql-reference/statements/alter/column#modify-column-remove
 type AlterTableModifyColumnRemove struct {
-	cluster string
-
 	Database string
 	Table    string
 	Column   Column
 	Property ColumnProperty
 }
 
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableModifyColumnRemove) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
 func (a AlterTableModifyColumnRemove) ForceMigrate() bool {
 	return false
-}
-
-// WithReplication is a no-op for this operation.
-func (a AlterTableModifyColumnRemove) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableModifyColumnRemove) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableModifyColumnRemove) IsMutation() bool {
@@ -267,10 +183,6 @@ func (a AlterTableModifyColumnRemove) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MODIFY COLUMN IF EXISTS ")
 	sql.WriteString(a.Column.Name)
 	sql.WriteString(" REMOVE ")
@@ -281,28 +193,10 @@ func (a AlterTableModifyColumnRemove) ToSQL() string {
 // AlterTableModifyColumnModifySettings is used to modify the settings of a column.
 // It is used to represent the ALTER TABLE MODIFY COLUMN SETTINGS statement in the SQL.
 type AlterTableModifyColumnModifySettings struct {
-	cluster string
-
 	Database string
 	Table    string
 	Column   Column
 	Settings ColumnSettings
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableModifyColumnModifySettings) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableModifyColumnModifySettings) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableModifyColumnModifySettings) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableModifyColumnModifySettings) IsMutation() bool {
@@ -330,10 +224,6 @@ func (a AlterTableModifyColumnModifySettings) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MODIFY COLUMN IF EXISTS ")
 	sql.WriteString(a.Column.Name)
 	sql.WriteString(" MODIFY SETTING ")
@@ -344,28 +234,10 @@ func (a AlterTableModifyColumnModifySettings) ToSQL() string {
 // AlterTableModifyColumnResetSettings is used to reset the settings of a column.
 // It is used to represent the ALTER TABLE MODIFY COLUMN RESET SETTINGS statement in the SQL.
 type AlterTableModifyColumnResetSettings struct {
-	cluster string
-
 	Database string
 	Table    string
 	Column   Column
 	Settings ColumnSettings
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableModifyColumnResetSettings) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableModifyColumnResetSettings) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableModifyColumnResetSettings) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableModifyColumnResetSettings) IsMutation() bool {
@@ -393,10 +265,6 @@ func (a AlterTableModifyColumnResetSettings) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MODIFY COLUMN IF EXISTS ")
 	sql.WriteString(a.Column.Name)
 	sql.WriteString(" RESET SETTING ")
@@ -407,29 +275,11 @@ func (a AlterTableModifyColumnResetSettings) ToSQL() string {
 // AlterTableMaterializeColumn is used to materialize a column.
 // It is used to represent the ALTER TABLE MATERIALIZE COLUMN statement in the SQL.
 type AlterTableMaterializeColumn struct {
-	cluster string
-
 	Database    string
 	Table       string
 	Column      Column
 	Partition   string
 	PartitionID string
-}
-
-// OnCluster is used to specify the cluster on which the operation should be performed.
-// This is useful when the operation is to be performed on a cluster setup.
-func (a AlterTableMaterializeColumn) OnCluster(cluster string) Operation {
-	a.cluster = cluster
-	return &a
-}
-
-func (a AlterTableMaterializeColumn) WithReplication() Operation {
-	// no-op
-	return &a
-}
-
-func (a AlterTableMaterializeColumn) ShouldWaitForDistributionQueue() (bool, string, string) {
-	return false, a.Database, a.Table
 }
 
 func (a AlterTableMaterializeColumn) IsMutation() bool {
@@ -457,10 +307,6 @@ func (a AlterTableMaterializeColumn) ToSQL() string {
 	sql.WriteString(a.Database)
 	sql.WriteString(".")
 	sql.WriteString(a.Table)
-	if a.cluster != "" {
-		sql.WriteString(" ON CLUSTER ")
-		sql.WriteString(a.cluster)
-	}
 	sql.WriteString(" MATERIALIZE COLUMN ")
 	sql.WriteString(a.Column.Name)
 	if a.Partition != "" {

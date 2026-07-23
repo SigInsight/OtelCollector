@@ -2,6 +2,9 @@
 
 This is the engine that manages the ClickHouse schema migrations.
 
+It creates a local schema for one ClickHouse node. Replicated engines,
+Distributed tables, `ON CLUSTER` DDL, and Keeper/ZooKeeper are unsupported.
+
 > **Note**
 > The standalone `signoz-schema-migrator` binary (and its Docker image) has been
 > removed from this fork. The migration engine in `schema_migrator/` is now run
@@ -37,10 +40,6 @@ When a mutation is performed, it triggers a rewrite of the data parts. This mean
 
 Such failures could leave the DB in a inconsistent state and lead to ingestion failures. If a migration attempted both a mutation and a new column addition, and the migration failed at the mutation step, the DB would be left in a state where the mutation is running in the background but the new columns are not added. Meanwhile, updated collectors expecting the new columns would fail to ingest data.
 
-### Distributed DDL Complications
-
-Every schema migration using ON CLUSTER creates entries in the `system.distributed_ddl_queue` table. New DDL operations cannot proceed while the existing DDL operation is in pending state. The DDL entry corresponding to the mutation would be in pending state till the mutation is completed. This means that the other migrations have to wait for the mutation to complete. Since the migrations are written using .sql files, it's not possible to know when the DDL operation is complete. The golang-migrate library would run the migration as multi-statement DDL operation, queuing up the DDL operations and waiting for them to complete. This would fail with a timeout error.
-
 ### Materialization Migrations
 
 When we run materialization migrations on the tables, intra-shard insert would fail because the insert is performed on the old table schema. See more here https://github.com/SigNoz/signoz/issues/4566.
@@ -55,8 +54,7 @@ Every operation implments the following interface:
 ```go
 // Operation is the interface that all operations must implement.
 // An Operation that is not mutation, idempotent and lightweight is expected
-// to complete almost immediately given there are no blocking items in the
-// distributed_ddl_queue.
+// to complete almost immediately.
 // Such operations are completed synchronously and allow the release upgrade
 // to proceed.
 // All other operations are run asynchronously in the background and do not
@@ -76,15 +74,6 @@ type Operation interface {
 	// data parts.
 	IsLightweight() bool
 
-	// OnCluster returns a new operation with the cluster name set
-	// This is used when the operation is run on a specific cluster
-	OnCluster(string) Operation
-
-	// WithReplication returns a new operation with the replication set
-	WithReplication() Operation
-
-	// ShouldWaitForDistributionQueue returns true if the operation should wait for the distribution queue to be empty
-	ShouldWaitForDistributionQueue() (bool, string, string)
 }
 ```
 
@@ -97,7 +86,7 @@ The migrator first runs the synchronous operations and then the asynchronous ope
 
 ## Adding a new operation
 
-To add a new operation, you need to implement the `Operation` interface. You need to make sure that the operation returns appropriate values for the `IsMutation`, `IsIdempotent`, `IsLightweight` and `ShouldWaitForDistributionQueue` methods.
+To add a new operation, implement the `Operation` interface and choose appropriate values for `IsMutation`, `IsIdempotent`, and `IsLightweight`.
 
 
 ## Adding a new migration
@@ -149,8 +138,6 @@ These ClickHouse connection flags are shared by every `migrate` subcommand:
 
 ```bash
 --clickhouse-dsn          DSN for the clickhouse connection (default "tcp://0.0.0.0:9001")
---clickhouse-cluster      Name of the clickhouse cluster to connect (default "cluster")
---clickhouse-replication  Set true if replication is enabled in the cluster (default true)
 ```
 
 Each subcommand also accepts a `--timeout` flag bounding that single operation
@@ -161,15 +148,15 @@ Each subcommand also accepts a `--timeout` flag bounding that single operation
 Bootstrap the databases and tracking tables, then apply all migrations:
 
 ```bash
-siginsight-otel-collector migrate bootstrap   --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
-siginsight-otel-collector migrate sync up     --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
-siginsight-otel-collector migrate async up    --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate bootstrap   --clickhouse-dsn="tcp://localhost:9000"
+siginsight-otel-collector migrate sync up     --clickhouse-dsn="tcp://localhost:9000"
+siginsight-otel-collector migrate async up    --clickhouse-dsn="tcp://localhost:9000"
 ```
 
 Gate the collector startup on the synchronous migrations being applied:
 
 ```bash
-siginsight-otel-collector migrate sync check  --clickhouse-cluster="cluster" --clickhouse-dsn="tcp://localhost:9000" --clickhouse-replication=true
+siginsight-otel-collector migrate sync check  --clickhouse-dsn="tcp://localhost:9000"
 ```
 
 In a typical deployment a one-shot migrator job runs

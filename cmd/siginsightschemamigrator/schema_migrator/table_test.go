@@ -19,16 +19,6 @@ func TestTableEngine(t *testing.T) {
 			},
 			wantSQL: "ReplacingMergeTree ORDER BY (timestamp, resource_id)",
 		},
-		{
-			name: "create table with distributed engine",
-			op: Distributed{
-				Database:    "default",
-				Table:       "logs",
-				Cluster:     "cluster",
-				ShardingKey: "rand()",
-			},
-			wantSQL: "Distributed('cluster', default, logs, rand())",
-		},
 	}
 
 	for _, tc := range testCases {

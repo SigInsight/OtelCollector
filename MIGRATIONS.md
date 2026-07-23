@@ -41,5 +41,5 @@ make test-migration-integration
 ```
 
 The integration script must continue to cover v1.0.4 adoption, fresh
-non-replicated and replicated creation, and rejection of failed migration
+single-node local-table creation, and rejection of failed migration
 states.

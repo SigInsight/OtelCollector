@@ -28,20 +28,19 @@ type Usage struct {
 }
 
 type UsageCollector struct {
-	exporterID           uuid.UUID
-	reader               *metricexport.Reader
-	ir                   *metricexport.IntervalReader
-	initReaderOnce       sync.Once
-	o                    Options
-	db                   clickhouse.Conn
-	dbName               string
-	tableName            string
-	distributedTableName string
-	usageParser          func(metrics []*metricdata.Metric, exporterID uuid.UUID) (map[string]Usage, error)
-	prevCount            int64
-	prevSize             int64
-	ttl                  int
-	logger               *zap.Logger
+	exporterID     uuid.UUID
+	reader         *metricexport.Reader
+	ir             *metricexport.IntervalReader
+	initReaderOnce sync.Once
+	o              Options
+	db             clickhouse.Conn
+	dbName         string
+	tableName      string
+	usageParser    func(metrics []*metricdata.Metric, exporterID uuid.UUID) (map[string]Usage, error)
+	prevCount      int64
+	prevSize       int64
+	ttl            int
+	logger         *zap.Logger
 }
 
 var CollectorID uuid.UUID
@@ -59,18 +58,17 @@ func NewUsageCollector(
 	logger *zap.Logger,
 ) *UsageCollector {
 	return &UsageCollector{
-		exporterID:           exporterId,
-		reader:               metricexport.NewReader(),
-		o:                    options,
-		db:                   db,
-		dbName:               dbName,
-		tableName:            UsageTableName,
-		distributedTableName: "distributed_" + UsageTableName,
-		usageParser:          usageParser,
-		prevCount:            0,
-		prevSize:             0,
-		ttl:                  3,
-		logger:               logger,
+		exporterID:  exporterId,
+		reader:      metricexport.NewReader(),
+		o:           options,
+		db:          db,
+		dbName:      dbName,
+		tableName:   UsageTableName,
+		usageParser: usageParser,
+		prevCount:   0,
+		prevSize:    0,
+		ttl:         3,
+		logger:      logger,
 	}
 }
 
@@ -94,7 +92,7 @@ func (c *UsageCollector) Stop() error {
 }
 
 func (e *UsageCollector) ExportMetrics(ctx context.Context, metrics []*metricdata.Metric) error {
-	e.logger.Debug("ExportMetrics", zap.Any("db", e.db), zap.Any("dbName", e.dbName), zap.Any("distributedTableName", e.distributedTableName), zap.Any("metrics", metrics))
+	e.logger.Debug("ExportMetrics", zap.Any("db", e.db), zap.Any("dbName", e.dbName), zap.Any("tableName", e.tableName), zap.Any("metrics", metrics))
 	usages, err := e.usageParser(metrics, e.exporterID)
 	if err != nil {
 		e.logger.Error("ExportMetrics parse error", zap.Error(err))
@@ -116,7 +114,7 @@ func (e *UsageCollector) ExportMetrics(ctx context.Context, metrics []*metricdat
 
 		e.logger.Debug("ExportMetrics", zap.Any("tenant", tenant), zap.Any("collectorID", CollectorID.String()), zap.Any("exporterID", e.exporterID.String()), zap.Any("time", time), zap.Any("encryptedData", string(encryptedData)))
 		// insert everything as a new row
-		err = e.db.Exec(ctx, fmt.Sprintf("insert into %s.%s values ($1, $2, $3, $4, $5)", e.dbName, e.distributedTableName), tenant, CollectorID.String(), e.exporterID.String(), time, string(encryptedData))
+		err = e.db.Exec(ctx, fmt.Sprintf("insert into %s.%s values ($1, $2, $3, $4, $5)", e.dbName, e.tableName), tenant, CollectorID.String(), e.exporterID.String(), time, string(encryptedData))
 		if err != nil {
 			e.logger.Error("ExportMetrics insert error", zap.Error(err))
 			return err

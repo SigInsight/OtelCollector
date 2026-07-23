@@ -16,8 +16,7 @@ type SchemaFingerprint struct {
 }
 
 type SchemaFingerprintExpectation struct {
-	NonReplicated SchemaFingerprint
-	Replicated    SchemaFingerprint
+	SchemaFingerprint
 }
 
 const schemaTableFingerprintQuery = `SELECT
@@ -28,7 +27,7 @@ const schemaTableFingerprintQuery = `SELECT
 	))), '\n'))
 FROM system.tables
 WHERE database = $1
-	AND name NOT IN ('schema_migrations', 'schema_migrations_v2', 'distributed_schema_migrations_v2')`
+	AND name NOT IN ('schema_migrations', 'schema_migrations_v2')`
 
 const schemaColumnFingerprintQuery = `SELECT
 	count(),
@@ -38,7 +37,7 @@ const schemaColumnFingerprintQuery = `SELECT
 	))), '\n'))
 FROM system.columns
 WHERE database = $1
-	AND table NOT IN ('schema_migrations', 'schema_migrations_v2', 'distributed_schema_migrations_v2')`
+	AND table NOT IN ('schema_migrations', 'schema_migrations_v2')`
 
 func (m *MigrationManager) InspectSchemaFingerprint(ctx context.Context, database string) (SchemaFingerprint, error) {
 	if !isKnownDatabase(database) {
@@ -63,12 +62,9 @@ func (m *MigrationManager) InspectSchemaFingerprint(ctx context.Context, databas
 }
 
 func (m *MigrationManager) VerifyV1BaselineSchema(ctx context.Context, spec BaselineSpec) error {
-	expected := v1SchemaFingerprints[spec.Database].NonReplicated
-	if m.replicationEnabled {
-		expected = v1SchemaFingerprints[spec.Database].Replicated
-	}
+	expected := v1SchemaFingerprints[spec.Database].SchemaFingerprint
 	if expected == (SchemaFingerprint{}) {
-		return fmt.Errorf("%w: v1 schema fingerprint is not defined for database %s (replication=%t)", ErrV1SchemaMismatch, spec.Database, m.replicationEnabled)
+		return fmt.Errorf("%w: v1 schema fingerprint is not defined for database %s", ErrV1SchemaMismatch, spec.Database)
 	}
 
 	actual, err := m.InspectSchemaFingerprint(ctx, spec.Database)

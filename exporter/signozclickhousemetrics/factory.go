@@ -94,9 +94,9 @@ func createDefaultConfig() component.Config {
 		DSN:              "tcp://localhost:9000",
 		EnableExpHist:    false,
 		Database:         "signoz_metrics",
-		SamplesTable:     "distributed_samples_v4",
-		TimeSeriesTable:  "distributed_time_series_v4",
-		ExpHistTable:     "distributed_exp_hist",
-		MetadataTable:    "distributed_metadata",
+		SamplesTable:     "samples_v4",
+		TimeSeriesTable:  "time_series_v4",
+		ExpHistTable:     "exp_hist",
+		MetadataTable:    "metadata",
 	}
 }

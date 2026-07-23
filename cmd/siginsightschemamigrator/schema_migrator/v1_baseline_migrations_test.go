@@ -27,7 +27,7 @@ func TestClassifyConsolidatedBaselineMarker(t *testing.T) {
 			name: "finished marker is complete",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					V1BaselineMigrationID: FinishedStatus,
 				},
@@ -38,7 +38,7 @@ func TestClassifyConsolidatedBaselineMarker(t *testing.T) {
 			name: "failed marker is partial and is not recovered",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					V1BaselineMigrationID: FailedStatus,
 				},
@@ -52,7 +52,7 @@ func TestClassifyConsolidatedBaselineMarker(t *testing.T) {
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
 				LegacyTableExists:  true,
-				TrackingTableCount: 2,
+				TrackingTableCount: 1,
 				MigrationStatuses: map[uint64]string{
 					V1BaselineMigrationID: FinishedStatus,
 				},
@@ -93,7 +93,7 @@ func TestV1BaselineSpecsUseStaticFinalSchema(t *testing.T) {
 		assertMigrationRange(t, want.baseFirst, want.baseLast, want.baseCount, spec.BaseMigrationIDs)
 		assertMigrationRange(t, want.requiredFirst, want.requiredLast, want.requiredCount, spec.RequiredMigrationIDs)
 
-		ddlCount := int(v1SchemaFingerprints[spec.Database].NonReplicated.TableCount)
+		ddlCount := int(v1SchemaFingerprints[spec.Database].TableCount)
 		totalDDL += ddlCount
 		extraOperations := 0
 		if spec.Database == SigInsightMetadataDB {
@@ -105,7 +105,7 @@ func TestV1BaselineSpecsUseStaticFinalSchema(t *testing.T) {
 		for _, operation := range spec.BaselineMigration.UpItems[:ddlCount] {
 			ddl, ok := operation.(StaticDDLOperation)
 			require.True(t, ok, "%s contains a non-static DDL operation", spec.Database)
-			assert.Contains(t, ddl.Query, staticDDLOnClusterToken)
+			assert.NotContains(t, ddl.Query, "{{")
 			assert.Equal(t, spec.Database, ddl.Database)
 
 			rank := staticDDLDependencyRank(ddl.Query)
@@ -113,21 +113,16 @@ func TestV1BaselineSpecsUseStaticFinalSchema(t *testing.T) {
 			previousRank = rank
 		}
 	}
-	assert.Equal(t, 88, totalDDL)
+	assert.Equal(t, 51, totalDDL)
 }
 
-func TestStaticDDLOperationAppliesDeploymentSettings(t *testing.T) {
-	local := v1BaselineDDLOperations[SigInsightAnalyticsDB][0]
-	localSQL := local.OnCluster("custom_cluster").WithReplication().ToSQL()
-	assert.Contains(t, localSQL, " ON CLUSTER custom_cluster ")
-	assert.Contains(t, localSQL, "ENGINE = ReplicatedMergeTree")
-	assert.NotContains(t, localSQL, "{{")
-
-	distributed := v1BaselineDDLOperations[SigInsightAnalyticsDB][1]
-	distributedSQL := distributed.OnCluster("custom_cluster").WithReplication().ToSQL()
-	assert.Contains(t, distributedSQL, "ENGINE = Distributed('custom_cluster',")
-	assert.NotContains(t, distributedSQL, "ReplicatedDistributed")
-	assert.NotContains(t, distributedSQL, "{{")
+func TestStaticDDLOperationRendersLocalSchema(t *testing.T) {
+	operation := v1BaselineDDLOperations[SigInsightAnalyticsDB][0]
+	sql := operation.ToSQL()
+	assert.NotContains(t, sql, " ON CLUSTER ")
+	assert.NotContains(t, sql, "Replicated")
+	assert.NotContains(t, sql, "Distributed")
+	assert.NotContains(t, sql, "{{")
 }
 
 func assertMigrationRange(t *testing.T, first, last, count uint64, ids []uint64) {
@@ -144,8 +139,6 @@ func staticDDLDependencyRank(query string) int {
 	switch {
 	case strings.HasPrefix(query, "CREATE MATERIALIZED VIEW"):
 		return 2
-	case strings.Contains(query, "ENGINE = Distributed"):
-		return 1
 	default:
 		return 0
 	}

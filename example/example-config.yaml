@@ -3,7 +3,7 @@
 #   - Scrapes host metrics from the machine the collector runs on.
 #   - Derives RED span metrics (`signoz.signoz_*` metrics) from incoming traces
 #     and writes them straight to ClickHouse via the delta-temporality pipeline.
-#   - Persists traces/metrics/logs to a ClickHouse cluster reachable at
+#   - Persists traces/metrics/logs to a single ClickHouse instance reachable at
 #     `signoz-host:9000`. Replace this with your real ClickHouse address.
 receivers:
   otlp:

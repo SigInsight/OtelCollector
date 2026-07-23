@@ -614,11 +614,11 @@ func TestExporterPushTracesData(t *testing.T) {
 	mock.MatchExpectationsInOrder(false)
 
 	// expect prepare batch for 5 tables
-	indexV3Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.distributed_signoz_index_v3")
-	errorIndexV2Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.distributed_signoz_error_index_v2")
-	attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.distributed_span_attributes_keys")
-	tagAttributesV2Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.distributed_tag_attributes_v2")
-	resourceStatement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.distributed_traces_v3_resource")
+	indexV3Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.signoz_index_v3")
+	errorIndexV2Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.signoz_error_index_v2")
+	attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.span_attributes_keys")
+	tagAttributesV2Statement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.tag_attributes_v2")
+	resourceStatement := mock.ExpectPrepareBatch("INSERT INTO signoz_traces.traces_v3_resource")
 
 	indexV3Statement.ExpectAppend()
 	indexV3Statement.ExpectSend()
@@ -632,7 +632,7 @@ func TestExporterPushTracesData(t *testing.T) {
 	resourceStatement.ExpectSend()
 
 	// make sure usage is inserted on shutdown
-	mock.ExpectExec(".*insert into signoz_traces.distributed_usage.*").WithArgs()
+	mock.ExpectExec(".*insert into signoz_traces.usage.*").WithArgs()
 
 	exporter := setupTestExporter(t, mock)
 

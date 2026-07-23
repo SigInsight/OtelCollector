@@ -26,7 +26,7 @@ func registerSyncCheck(parentCmd *cobra.Command, logger *zap.Logger) {
 		Short:        "Checks the status of migrations for the store by checking the status of migrations in the migration table.",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			check, err := newSyncCheck(config.Clickhouse.DSN, config.Clickhouse.Cluster, config.Clickhouse.Replication, config.MigrateSyncCheck.Timeout, logger)
+			check, err := newSyncCheck(config.Clickhouse.DSN, config.MigrateSyncCheck.Timeout, logger)
 			if err != nil {
 				return err
 			}
@@ -45,7 +45,7 @@ func registerSyncCheck(parentCmd *cobra.Command, logger *zap.Logger) {
 	parentCmd.AddCommand(syncCheckCommand)
 }
 
-func newSyncCheck(dsn string, cluster string, replication bool, timeout time.Duration, logger *zap.Logger) (*syncCheck, error) {
+func newSyncCheck(dsn string, timeout time.Duration, logger *zap.Logger) (*syncCheck, error) {
 	opts, err := clickhouse.ParseDSN(dsn)
 	if err != nil {
 		return nil, err
@@ -57,10 +57,7 @@ func newSyncCheck(dsn string, cluster string, replication bool, timeout time.Dur
 	}
 
 	migrationManager, err := schemamigrator.NewMigrationManager(
-		schemamigrator.WithClusterName(cluster),
-		schemamigrator.WithReplicationEnabled(replication),
 		schemamigrator.WithConn(conn),
-		schemamigrator.WithConnOptions(*opts),
 		schemamigrator.WithLogger(logger),
 	)
 	if err != nil {
