@@ -19,12 +19,13 @@ const (
 	BaselineStateAhead          BaselineState = "ahead"
 )
 
-// BaselineSpec describes required, optional, and fresh-install migration records for one database.
+// BaselineSpec describes required and fresh-install migration records for one database.
 type BaselineSpec struct {
-	Database           string
-	BaseMigrations     []SchemaMigrationRecord
-	RequiredMigrations []SchemaMigrationRecord
-	OptionalMigrations []SchemaMigrationRecord
+	Database             string
+	BaseMigrationIDs     []uint64
+	RequiredMigrationIDs []uint64
+	AllowedMigrationIDs  []uint64
+	BaselineMigration    SchemaMigrationRecord
 }
 
 // BaselineSnapshot contains the database facts used by the pure baseline classifier.
@@ -37,15 +38,14 @@ type BaselineSnapshot struct {
 
 // BaselineInspection explains the baseline state and any incompatible migration records.
 type BaselineInspection struct {
-	Database                    string
-	State                       BaselineState
-	LegacyTableExists           bool
-	DomainTableCount            uint64
-	TrackingTableCount          uint64
-	MissingMigrationIDs         []uint64
-	NonFinishedMigrationIDs     []uint64
-	UnexpectedMigrationIDs      []uint64
-	AppliedOptionalMigrationIDs []uint64
+	Database                string
+	State                   BaselineState
+	LegacyTableExists       bool
+	DomainTableCount        uint64
+	TrackingTableCount      uint64
+	MissingMigrationIDs     []uint64
+	NonFinishedMigrationIDs []uint64
+	UnexpectedMigrationIDs  []uint64
 }
 
 const baselineInventoryQuery = `SELECT
@@ -62,44 +62,17 @@ func baselineMigrationsQuery(database string) string {
 	)
 }
 
-// V1BaselineSpecs returns the supported v1 migration history for every telemetry database.
+// V1BaselineSpecs freezes the histories accepted at the v1 boundary. IDs added
+// after this boundary need a separate post-baseline runner and must not be added
+// here, otherwise an existing 999 marker would incorrectly imply they ran.
 func V1BaselineSpecs() []BaselineSpec {
-	optionalLogsMigrations := make([]SchemaMigrationRecord, 0)
-	for _, migration := range LogsMigrationsV2 {
-		if migration.MigrationID >= 2000 {
-			optionalLogsMigrations = append(optionalLogsMigrations, migration)
-		}
-	}
-
 	return []BaselineSpec{
-		{
-			Database:           SigInsightTracesDB,
-			BaseMigrations:     SquashedTracesMigrations,
-			RequiredMigrations: TracesMigrations,
-		},
-		{
-			Database:           SigInsightMetricsDB,
-			BaseMigrations:     SquashedMetricsMigrations,
-			RequiredMigrations: MetricsMigrations,
-		},
-		{
-			Database:           SigInsightLogsDB,
-			BaseMigrations:     CustomRetentionLogsMigrations,
-			RequiredMigrations: LogsMigrations,
-			OptionalMigrations: optionalLogsMigrations,
-		},
-		{
-			Database:           SigInsightMetadataDB,
-			RequiredMigrations: MetadataMigrations,
-		},
-		{
-			Database:           SigInsightAnalyticsDB,
-			RequiredMigrations: AnalyticsMigrations,
-		},
-		{
-			Database:           SigInsightMeterDB,
-			RequiredMigrations: MeterMigrations,
-		},
+		newV1BaselineSpec(SigInsightTracesDB, migrationIDRange(1, 27), migrationIDRange(1000, 1008)),
+		newV1BaselineSpec(SigInsightMetricsDB, migrationIDRange(1, 28), migrationIDRange(1000, 1007)),
+		newV1BaselineSpec(SigInsightLogsDB, migrationIDRange(1, 9), migrationIDRange(1000, 1005)),
+		newV1BaselineSpec(SigInsightMetadataDB, nil, migrationIDRange(1000, 1001)),
+		newV1BaselineSpec(SigInsightAnalyticsDB, nil, migrationIDRange(1, 1)),
+		newV1BaselineSpec(SigInsightMeterDB, nil, migrationIDRange(1, 5)),
 	}
 }
 
@@ -163,14 +136,16 @@ func ClassifyBaselineState(spec BaselineSpec, snapshot BaselineSnapshot) Baselin
 		return result
 	}
 
-	baseIDs := migrationIDSet(spec.BaseMigrations)
-	requiredIDs := migrationIDSet(spec.RequiredMigrations)
-	optionalIDs := migrationIDSet(spec.OptionalMigrations)
+	baseIDs := migrationIDSet(spec.BaseMigrationIDs)
+	requiredIDs := migrationIDSet(spec.RequiredMigrationIDs)
 
-	allowedIDs := make(map[uint64]struct{}, len(baseIDs)+len(requiredIDs)+len(optionalIDs))
+	allowedIDs := make(map[uint64]struct{}, len(baseIDs)+len(requiredIDs)+len(spec.AllowedMigrationIDs)+1)
 	addMigrationIDs(allowedIDs, baseIDs)
 	addMigrationIDs(allowedIDs, requiredIDs)
-	addMigrationIDs(allowedIDs, optionalIDs)
+	addMigrationIDs(allowedIDs, migrationIDSet(spec.AllowedMigrationIDs))
+	if spec.BaselineMigration.MigrationID != 0 {
+		allowedIDs[spec.BaselineMigration.MigrationID] = struct{}{}
+	}
 
 	if !snapshot.LegacyTableExists {
 		addMigrationIDs(requiredIDs, baseIDs)
@@ -184,21 +159,21 @@ func ClassifyBaselineState(spec BaselineSpec, snapshot BaselineSnapshot) Baselin
 		if status != FinishedStatus {
 			result.NonFinishedMigrationIDs = append(result.NonFinishedMigrationIDs, migrationID)
 		}
-		if _, ok := optionalIDs[migrationID]; ok && status == FinishedStatus {
-			result.AppliedOptionalMigrationIDs = append(result.AppliedOptionalMigrationIDs, migrationID)
-		}
 	}
 
-	for migrationID := range requiredIDs {
-		if _, ok := snapshot.MigrationStatuses[migrationID]; !ok {
-			result.MissingMigrationIDs = append(result.MissingMigrationIDs, migrationID)
+	baselineFinished := spec.BaselineMigration.MigrationID != 0 &&
+		snapshot.MigrationStatuses[spec.BaselineMigration.MigrationID] == FinishedStatus
+	if !baselineFinished {
+		for migrationID := range requiredIDs {
+			if _, ok := snapshot.MigrationStatuses[migrationID]; !ok {
+				result.MissingMigrationIDs = append(result.MissingMigrationIDs, migrationID)
+			}
 		}
 	}
 
 	slices.Sort(result.MissingMigrationIDs)
 	slices.Sort(result.NonFinishedMigrationIDs)
 	slices.Sort(result.UnexpectedMigrationIDs)
-	slices.Sort(result.AppliedOptionalMigrationIDs)
 
 	if len(result.UnexpectedMigrationIDs) > 0 {
 		result.State = BaselineStateAhead
@@ -221,10 +196,10 @@ func ClassifyBaselineState(spec BaselineSpec, snapshot BaselineSnapshot) Baselin
 	return result
 }
 
-func migrationIDSet(migrations []SchemaMigrationRecord) map[uint64]struct{} {
+func migrationIDSet(migrations []uint64) map[uint64]struct{} {
 	ids := make(map[uint64]struct{}, len(migrations))
-	for _, migration := range migrations {
-		ids[migration.MigrationID] = struct{}{}
+	for _, migrationID := range migrations {
+		ids[migrationID] = struct{}{}
 	}
 	return ids
 }
@@ -242,4 +217,12 @@ func isKnownDatabase(database string) bool {
 		}
 	}
 	return false
+}
+
+func migrationIDRange(first, last uint64) []uint64 {
+	ids := make([]uint64, 0, last-first+1)
+	for id := first; id <= last; id++ {
+		ids = append(ids, id)
+	}
+	return ids
 }

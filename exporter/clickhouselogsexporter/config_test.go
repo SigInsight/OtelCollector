@@ -76,11 +76,8 @@ func TestLoadConfig(t *testing.T) {
 			FetchKeysInterval: 10 * time.Minute,
 			MaxDistinctValues: 25000,
 		},
-		LogLevelConcurrency:       utils.ToPointer(7),
-		BodyJSONEnabled:           true,
-		PromotedPathsSyncInterval: utils.ToPointer(10 * time.Second),
-		BodyJSONOldBodyEnabled:    true,
-		MaxAllowedDataAgeDays:     utils.ToPointer(15),
+		LogLevelConcurrency:   utils.ToPointer(7),
+		MaxAllowedDataAgeDays: utils.ToPointer(15),
 	}
 	assert.Equal(t, expectedConfig, r1)
 

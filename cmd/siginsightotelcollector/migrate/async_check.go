@@ -9,14 +9,12 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/config"
 	schemamigrator "github.com/SigInsight/OtelCollector/cmd/siginsightschemamigrator/schema_migrator"
-	"github.com/SigInsight/OtelCollector/constants"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 type asyncCheck struct {
-	conn             clickhouse.Conn
 	timeout          time.Duration
 	migrationManager *schemamigrator.MigrationManager
 	logger           *zap.Logger
@@ -70,7 +68,6 @@ func newAsyncCheck(dsn string, cluster string, replication bool, timeout time.Du
 	}
 
 	return &asyncCheck{
-		conn:             conn,
 		timeout:          timeout,
 		migrationManager: migrationManager,
 		logger:           logger,
@@ -87,10 +84,14 @@ func (cmd *asyncCheck) Run(ctx context.Context) error {
 			break
 		}
 
-		cmd.logger.Info("Error occurred while checking for sync migrations to complete, retrying", zap.Error(err))
+		if !Unwrapb(err).IsRetryable() {
+			return fmt.Errorf("failed to check async migrations: %w", err)
+		}
+
+		cmd.logger.Info("Error occurred while checking for async migrations to complete, retrying", zap.Error(err))
 		nextBackOff := backoff.NextBackOff()
 		if nextBackOff == backoff.Stop {
-			return errors.New("timed out waiting for sync migrations to complete within the configured timeout")
+			return errors.New("timed out waiting for async migrations to complete within the configured timeout")
 		}
 		time.Sleep(nextBackOff)
 	}
@@ -99,95 +100,5 @@ func (cmd *asyncCheck) Run(ctx context.Context) error {
 }
 
 func (cmd *asyncCheck) Check(ctx context.Context) error {
-	tracesLastMigrationID, err := cmd.getLastAsyncMigration(schemamigrator.TracesMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightTracesDB, tracesLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", tracesLastMigrationID, schemamigrator.SigInsightTracesDB)
-		}
-	}
-
-	logsMigrations := schemamigrator.LogsMigrations
-	if constants.EnableLogsMigrationsV2 {
-		logsMigrations = schemamigrator.LogsMigrationsV2
-	}
-
-	logsLastMigrationID, err := cmd.getLastAsyncMigration(logsMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightLogsDB, logsLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", logsLastMigrationID, schemamigrator.SigInsightLogsDB)
-		}
-	}
-
-	metricsLastMigrationID, err := cmd.getLastAsyncMigration(schemamigrator.MetricsMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightMetricsDB, metricsLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", metricsLastMigrationID, schemamigrator.SigInsightMetricsDB)
-		}
-	}
-
-	metadataLastMigrationID, err := cmd.getLastAsyncMigration(schemamigrator.MetadataMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightMetadataDB, metadataLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", metadataLastMigrationID, schemamigrator.SigInsightMetadataDB)
-		}
-		return err
-	}
-
-	analyticsLastMigrationID, err := cmd.getLastAsyncMigration(schemamigrator.AnalyticsMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightAnalyticsDB, analyticsLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", analyticsLastMigrationID, schemamigrator.SigInsightAnalyticsDB)
-		}
-		return err
-	}
-
-	meterLastMigrationID, err := cmd.getLastAsyncMigration(schemamigrator.MeterMigrations)
-	if err == nil {
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, schemamigrator.SigInsightMeterDB, meterLastMigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return err
-		}
-
-		if !ok {
-			return fmt.Errorf("migration with ID %d for database '%s' has not been completed", meterLastMigrationID, schemamigrator.SigInsightMeterDB)
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (cmd *asyncCheck) getLastAsyncMigration(migrations []schemamigrator.SchemaMigrationRecord) (uint64, error) {
-	for i := len(migrations) - 1; i >= 0; i-- {
-		if cmd.migrationManager.IsAsync(migrations[i]) {
-			return migrations[i].MigrationID, nil
-		}
-	}
-
-	return 0, fmt.Errorf("no async migrations found")
+	return checkPostBaselineMigrations(ctx, cmd.migrationManager, postBaselineAsyncPhase)
 }

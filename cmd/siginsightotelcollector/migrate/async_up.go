@@ -8,15 +8,12 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/SigInsight/OtelCollector/cmd/siginsightotelcollector/config"
 	schemamigrator "github.com/SigInsight/OtelCollector/cmd/siginsightschemamigrator/schema_migrator"
-	"github.com/SigInsight/OtelCollector/constants"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 type asyncUp struct {
-	conn             clickhouse.Conn
-	cluster          string
 	migrationManager *schemamigrator.MigrationManager
 	timeout          time.Duration
 	logger           *zap.Logger
@@ -67,8 +64,6 @@ func newAsyncUp(dsn string, cluster string, replication bool, timeout time.Durat
 	)
 
 	return &asyncUp{
-		conn:             conn,
-		cluster:          cluster,
 		migrationManager: migrationManager,
 		timeout:          timeout,
 		logger:           logger.With(zap.String("type", "async"), zap.String("subcommand", "up")),
@@ -105,117 +100,5 @@ func (cmd *asyncUp) Run(ctx context.Context) error {
 }
 
 func (cmd *asyncUp) Up(ctx context.Context) error {
-	err := cmd.runSquashedMigrations(ctx)
-	if err != nil {
-		return err
-	}
-
-	cmd.logger.Info("Running async migrations")
-	err = cmd.run(ctx, schemamigrator.TracesMigrations, schemamigrator.SigInsightTracesDB)
-	if err != nil {
-		return err
-	}
-
-	logsMigrations := schemamigrator.LogsMigrations
-	if constants.EnableLogsMigrationsV2 {
-		logsMigrations = schemamigrator.LogsMigrationsV2
-	}
-
-	err = cmd.run(ctx, logsMigrations, schemamigrator.SigInsightLogsDB)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.run(ctx, schemamigrator.MetricsMigrations, schemamigrator.SigInsightMetricsDB)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.run(ctx, schemamigrator.MetadataMigrations, schemamigrator.SigInsightMetadataDB)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.run(ctx, schemamigrator.AnalyticsMigrations, schemamigrator.SigInsightAnalyticsDB)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.run(ctx, schemamigrator.MeterMigrations, schemamigrator.SigInsightMeterDB)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (cmd *asyncUp) runSquashedMigrations(ctx context.Context) error {
-	squashedMigrations := []struct {
-		database   string
-		migrations []schemamigrator.SchemaMigrationRecord
-	}{
-		{schemamigrator.SigInsightLogsDB, schemamigrator.CustomRetentionLogsMigrations},
-		{schemamigrator.SigInsightMetricsDB, schemamigrator.SquashedMetricsMigrations},
-		{schemamigrator.SigInsightTracesDB, schemamigrator.SquashedTracesMigrations},
-	}
-
-	for _, item := range squashedMigrations {
-		database := item.database
-		cmd.logger.Info("checking if should run squashed migrations", zap.String("database", database))
-		should, err := cmd.migrationManager.ShouldRunSquashedV2(ctx, database)
-		if err != nil {
-			return NewRetryableError(err)
-		}
-
-		if !should {
-			cmd.logger.Info("skipping squashed migrations", zap.String("database", database))
-			continue
-		}
-
-		cmd.logger.Info("running squashed migrations", zap.String("database", database))
-
-		err = cmd.run(ctx, item.migrations, database)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (cmd *asyncUp) run(ctx context.Context, migrations []schemamigrator.SchemaMigrationRecord, db string) error {
-	for _, migration := range migrations {
-		if !cmd.migrationManager.IsAsync(migration) {
-			continue
-		}
-
-		ok, err := cmd.migrationManager.CheckMigrationStatus(ctx, db, migration.MigrationID, schemamigrator.FinishedStatus)
-		if err != nil {
-			return NewRetryableError(err)
-		}
-
-		if ok {
-			continue
-		}
-
-		for _, item := range migration.UpItems {
-			if err := cmd.migrationManager.RunOperationWithoutUpdate(ctx, item, migration.MigrationID, db); err != nil {
-				cmd.logger.Error("Error occurred while running operation", zap.Error(err))
-
-				// if any one of the operations fails, mark the migration as failed
-				if err := cmd.migrationManager.InsertMigrationEntry(ctx, db, migration.MigrationID, schemamigrator.FailedStatus); err != nil {
-					return err
-				}
-
-				return err
-			}
-		}
-
-		// if all the operations succeed, mark the migration as finished
-		if err := cmd.migrationManager.InsertMigrationEntry(ctx, db, migration.MigrationID, schemamigrator.FinishedStatus); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return runPostBaselineMigrations(ctx, cmd.migrationManager, postBaselineAsyncPhase, cmd.logger)
 }

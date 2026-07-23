@@ -28,7 +28,6 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/SigInsight/OtelCollector/constants"
 	"github.com/SigInsight/OtelCollector/internal/common"
 	"github.com/SigInsight/OtelCollector/pkg/keycheck"
 	"github.com/SigInsight/OtelCollector/usage"
@@ -57,7 +56,6 @@ const (
 	distributedLogsResourceV2        = "distributed_logs_v2_resource"
 	distributedLogsAttributeKeys     = "distributed_logs_attribute_keys"
 	distributedLogsResourceKeys      = "distributed_logs_resource_keys"
-	distributedColumnEvolutionTable  = constants.SigInsightMetadataDB + ".distributed_column_evolution_metadata"
 	distributedLogsResourceV2Seconds = 1800
 	// language=ClickHouse SQL
 	insertLogsResourceSQLTemplate = `INSERT INTO %s.%s (
@@ -110,51 +108,6 @@ const (
 			?,
 			?
 			)`
-	insertLogsSQLTemplateV2WithBodyJSON = `INSERT INTO %s.%s (
-		ts_bucket_start,
-		resource_fingerprint,
-		timestamp,
-		observed_timestamp,
-		id,
-		trace_id,
-		span_id,
-		trace_flags,
-		severity_text,
-		severity_number,
-		body,
-		body_v2,
-		body_promoted,
-		attributes_string,
-		attributes_number,
-		attributes_bool,
-		resources_string,
-		resource,
-		scope_name,
-		scope_version,
-		scope_string
-		) VALUES (
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			?
-			)`
 )
 
 type shouldSkipKey struct {
@@ -174,21 +127,19 @@ type attributeMap struct {
 // Record represents a prepared log record, ready to be appended to ClickHouse batches.
 type Record struct {
 	// batch columns
-	tsBucketStart    uint64
-	resourceFP       string
-	ts               uint64
-	ots              uint64
-	id               string
-	traceID          string
-	spanID           string
-	traceFlags       uint32
-	severityText     string
-	severityNum      uint8
-	body             string
-	bodyJSON         string
-	bodyJSONPromoted string
-	scopeName        string
-	scopeVersion     string
+	tsBucketStart uint64
+	resourceFP    string
+	ts            uint64
+	ots           uint64
+	id            string
+	traceID       string
+	spanID        string
+	traceFlags    uint32
+	severityText  string
+	severityNum   uint8
+	body          string
+	scopeName     string
+	scopeVersion  string
 	// attribute/tag maps to be appended by the single consumer
 	resourceMap attributeMap
 	scopeMap    attributeMap
@@ -277,12 +228,10 @@ func (r *resourcesSeenMap) rangeAll(fn func(bucketTs int64, resourceKey, fingerp
 }
 
 type clickhouseLogsExporter struct {
-	id                     uuid.UUID
-	db                     clickhouse.Conn
-	insertLogsSQLV2        string
-	insertLogsResourceSQL  string
-	bodyJSONEnabled        bool
-	bodyJSONOldBodyEnabled bool
+	id                    uuid.UUID
+	db                    clickhouse.Conn
+	insertLogsSQLV2       string
+	insertLogsResourceSQL string
 
 	logger *zap.Logger
 	cfg    *Config
@@ -304,11 +253,6 @@ type clickhouseLogsExporter struct {
 	fetchKeysInterval     time.Duration
 	shutdownFuncs         []func() error
 	maxAllowedDataAgeDays int
-
-	// promotedPaths holds a set of JSON paths that should be promoted.
-	// Accessed via atomic.Value to allow lock-free reads on hot path.
-	promotedPaths             atomic.Value // stores map[string]struct{}
-	promotedPathsSyncInterval time.Duration
 }
 
 func newExporter(_ exporter.Settings, cfg *Config, opts ...LogExporterOption) (*clickhouseLogsExporter, error) {
@@ -323,32 +267,25 @@ func newExporter(_ exporter.Settings, cfg *Config, opts ...LogExporterOption) (*
 	}
 
 	e := &clickhouseLogsExporter{
-		insertLogsSQLV2:           renderInsertLogsSQLV2(cfg.BodyJSONEnabled),
-		insertLogsResourceSQL:     renderInsertLogsResourceSQL(cfg),
-		cfg:                       cfg,
-		bodyJSONEnabled:           cfg.BodyJSONEnabled,
-		wg:                        new(sync.WaitGroup),
-		closeChan:                 make(chan struct{}),
-		maxDistinctValues:         cfg.AttributesLimits.MaxDistinctValues,
-		fetchKeysInterval:         cfg.AttributesLimits.FetchKeysInterval,
-		promotedPathsSyncInterval: *cfg.PromotedPathsSyncInterval,
-		bodyJSONOldBodyEnabled:    cfg.BodyJSONOldBodyEnabled,
-		limiter:                   make(chan struct{}, utils.Concurrency()),
-		maxAllowedDataAgeDays:     maxAllowedDataAgeDays,
+		insertLogsSQLV2:       renderInsertLogsSQLV2(),
+		insertLogsResourceSQL: renderInsertLogsResourceSQL(cfg),
+		cfg:                   cfg,
+		wg:                    new(sync.WaitGroup),
+		closeChan:             make(chan struct{}),
+		maxDistinctValues:     cfg.AttributesLimits.MaxDistinctValues,
+		fetchKeysInterval:     cfg.AttributesLimits.FetchKeysInterval,
+		limiter:               make(chan struct{}, utils.Concurrency()),
+		maxAllowedDataAgeDays: maxAllowedDataAgeDays,
 	}
 	for _, opt := range opts {
 		opt(e)
 	}
-
-	// Ensure promotedPaths is always initialized so reads and type assertions are safe
-	e.promotedPaths.Store(map[string]struct{}{})
 
 	return e, nil
 }
 
 func (e *clickhouseLogsExporter) Start(ctx context.Context, host component.Host) error {
 	e.fetchShouldSkipKeys() // Start ticker routine
-	e.fetchPromotedPaths()
 	return nil
 }
 
@@ -399,58 +336,6 @@ func (e *clickhouseLogsExporter) fetchShouldSkipKeys() {
 			}
 		}
 	}()
-}
-
-// fetchPromotedPaths periodically loads promoted JSON paths from ClickHouse into memory.
-func (e *clickhouseLogsExporter) fetchPromotedPaths() {
-	// if body JSON columns are activated, fetch promoted paths periodically
-	if e.bodyJSONEnabled {
-		ticker := time.NewTicker(e.promotedPathsSyncInterval)
-		e.shutdownFuncs = append(e.shutdownFuncs, func() error {
-			ticker.Stop()
-			return nil
-		})
-
-		e.doFetchPromotedPaths() // Immediate first fetch
-		e.wg.Add(1)
-		go func() {
-			defer e.wg.Done()
-			for {
-				select {
-				case <-e.closeChan:
-					return
-				case <-ticker.C:
-					e.doFetchPromotedPaths()
-				}
-			}
-		}()
-	}
-}
-
-func (e *clickhouseLogsExporter) doFetchPromotedPaths() {
-	// Query Evolution Table for promoted paths
-	// Format: signal, col_name, col_type, field_context, field_name, release_time
-	// Example: logs, body_promoted, JSON, body, user.name, Jan 10
-	query := fmt.Sprintf(
-		`SELECT field_name FROM %s WHERE signal = 'logs' AND column_name = '%s' AND field_context = 'body' AND field_name != '__all__' SETTINGS max_threads = 1`,
-		distributedColumnEvolutionTable,
-		constants.BodyPromotedColumn,
-	)
-	e.logger.Debug("fetching promoted paths from evolution table", zap.String("query", query))
-
-	rows := []struct {
-		FieldName string `ch:"field_name"`
-	}{}
-	if err := e.db.Select(context.Background(), &rows, query); err != nil {
-		e.logger.Error("error while fetching promoted paths from evolution table", zap.Error(err))
-		return
-	}
-	updated := make(map[string]struct{}, len(rows))
-	for _, r := range rows {
-		updated[r.FieldName] = struct{}{}
-	}
-
-	e.promotedPaths.Store(updated)
 }
 
 // Shutdown will shutdown the exporter.
@@ -618,9 +503,6 @@ func (e *clickhouseLogsExporter) pushToClickhouse(ctx context.Context, ld plog.L
 					rec.severityNum,
 					rec.body,
 				}
-				if e.bodyJSONEnabled {
-					args = append(args, rec.bodyJSON, rec.bodyJSONPromoted)
-				}
 				args = append(args,
 					rec.attrsMap.StringData,
 					rec.attrsMap.NumberData,
@@ -713,28 +595,26 @@ producerIteration:
 					// record size calculation
 					attrBytes, _ := json.Marshal(record.Attributes().AsRaw())
 
-					body, bodyJSON, promoted := e.processBody(record.Body())
+					body := getStringifiedBody(record.Body())
 					recordStream <- &Record{
-						tsBucketStart:    uint64(lBucketStart),
-						resourceFP:       fp,
-						ts:               ts,
-						ots:              ots,
-						id:               id.String(),
-						traceID:          utils.TraceIDToHexOrEmptyString(record.TraceID()),
-						spanID:           utils.SpanIDToHexOrEmptyString(record.SpanID()),
-						traceFlags:       uint32(record.Flags()),
-						severityText:     record.SeverityText(),
-						severityNum:      uint8(record.SeverityNumber()),
-						body:             body,
-						bodyJSON:         bodyJSON,
-						bodyJSONPromoted: promoted,
-						scopeName:        scopeName,
-						scopeVersion:     scopeVersion,
-						resourceMap:      resourcesMap,
-						scopeMap:         scopeMap,
-						attrsMap:         attrsMap,
-						logFields:        attributeMap{StringData: map[string]string{"severity_text": record.SeverityText()}, NumberData: map[string]float64{"severity_number": float64(record.SeverityNumber())}},
-						recordSize:       int64(len([]byte(record.Body().AsString())) + len(attrBytes) + len(resBytes)),
+						tsBucketStart: uint64(lBucketStart),
+						resourceFP:    fp,
+						ts:            ts,
+						ots:           ots,
+						id:            id.String(),
+						traceID:       utils.TraceIDToHexOrEmptyString(record.TraceID()),
+						spanID:        utils.SpanIDToHexOrEmptyString(record.SpanID()),
+						traceFlags:    uint32(record.Flags()),
+						severityText:  record.SeverityText(),
+						severityNum:   uint8(record.SeverityNumber()),
+						body:          body,
+						scopeName:     scopeName,
+						scopeVersion:  scopeVersion,
+						resourceMap:   resourcesMap,
+						scopeMap:      scopeMap,
+						attrsMap:      attrsMap,
+						logFields:     attributeMap{StringData: map[string]string{"severity_text": record.SeverityText()}, NumberData: map[string]float64{"severity_number": float64(record.SeverityNumber())}},
+						recordSize:    int64(len([]byte(record.Body().AsString())) + len(attrBytes) + len(resBytes)),
 					}
 					return nil
 				})
@@ -827,27 +707,6 @@ producerIteration:
 	}
 
 	return nil
-}
-
-func (e *clickhouseLogsExporter) processBody(body pcommon.Value) (string, string, string) {
-	promoted := pcommon.NewValueMap()
-	bodyJSON := pcommon.NewValueMap()
-	if e.bodyJSONEnabled && body.Type() == pcommon.ValueTypeMap {
-		// promoted paths extraction using cached set
-		promotedSet := e.promotedPaths.Load().(map[string]struct{})
-
-		// set values to promoted and bodyJSON
-		promoted = buildPromoted(body, promotedSet)
-		// switch the reference to bodyJSON
-		bodyJSON = body
-
-		if !e.bodyJSONOldBodyEnabled {
-			// set body to empty string
-			body = pcommon.NewValueEmpty()
-		}
-	}
-
-	return getStringifiedBody(body), getStringifiedBody(bodyJSON), getStringifiedBody(promoted)
 }
 
 func send(statement driver.Batch, tableName string, durationCh chan<- statementSendDuration, chErr chan<- error, wg *sync.WaitGroup) {
@@ -1026,9 +885,6 @@ func newClickhouseClient(_ *zap.Logger, cfg *Config) (clickhouse.Conn, error) {
 		return nil, err
 	}
 
-	// default settings for allowing ClickHouse to handle duplicate paths in JSON type.
-	options.Settings["type_json_skip_duplicated_paths"] = 1
-
 	// setting maxIdleConnections = numConsumers + 1 to avoid `prepareBatch:clickhouse: acquire conn timeout` error
 	maxIdleConnections := 1
 	if qc := cfg.QueueBatchConfig.Get(); qc != nil {
@@ -1050,12 +906,8 @@ func newClickhouseClient(_ *zap.Logger, cfg *Config) (clickhouse.Conn, error) {
 	return db, nil
 }
 
-func renderInsertLogsSQLV2(includeBodyJSON bool) string {
-	template := insertLogsSQLTemplateV2
-	if includeBodyJSON {
-		template = insertLogsSQLTemplateV2WithBodyJSON
-	}
-	return fmt.Sprintf(template, databaseName, distributedLogsTableV2)
+func renderInsertLogsSQLV2() string {
+	return fmt.Sprintf(insertLogsSQLTemplateV2, databaseName, distributedLogsTableV2)
 }
 
 func renderInsertLogsResourceSQL(_ *Config) string {

@@ -34,6 +34,10 @@ test-and-lint: test fmt lint
 test:
 	go test -tags="$(PROMETHEUS_BUILD_TAGS)" -count=1 -v -race -cover ./...
 
+.PHONY: test-migration-integration
+test-migration-integration:
+	./scripts/test-v1-baseline.sh
+
 .PHONY: build
 build:
 	go build -tags="$(PROMETHEUS_BUILD_TAGS)" -o .build/${GOOS}-${GOARCH}/siginsight-otel-collector ./cmd/siginsightotelcollector

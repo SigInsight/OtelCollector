@@ -503,7 +503,7 @@ func (m *MigrationManager) IsSync(migration SchemaMigrationRecord) bool {
 }
 
 func (m *MigrationManager) IsSyncOperation(item Operation) bool {
-	return item.ForceMigrate() || (!item.IsMutation() && item.IsIdempotent() && item.IsLightweight())
+	return isSyncOperation(item)
 }
 
 func (m *MigrationManager) IsAsync(migration SchemaMigrationRecord) bool {
@@ -678,19 +678,25 @@ func (m *MigrationManager) InsertMigrationEntry(ctx context.Context, db string, 
 }
 
 func (m *MigrationManager) CheckMigrationStatus(ctx context.Context, db string, migrationID uint64, status string) (bool, error) {
+	actual, exists, err := m.MigrationStatus(ctx, db, migrationID)
+	return exists && actual == status, err
+}
+
+// MigrationStatus returns the final status record for one migration.
+func (m *MigrationManager) MigrationStatus(ctx context.Context, db string, migrationID uint64) (string, bool, error) {
 	query := fmt.Sprintf("SELECT * FROM %s.distributed_schema_migrations_v2 WHERE migration_id = %d SETTINGS final = 1;", db, migrationID)
 	m.logger.Info("Checking migration status", zap.String("query", query))
 
 	var migrationSchemaMigrationRecord MigrationSchemaMigrationRecord
 	if err := m.conn.QueryRow(ctx, query).ScanStruct(&migrationSchemaMigrationRecord); err != nil {
 		if err == sql.ErrNoRows {
-			return false, nil
+			return "", false, nil
 		}
 
-		return false, err
+		return "", false, err
 	}
 
-	return migrationSchemaMigrationRecord.Status == status, nil
+	return migrationSchemaMigrationRecord.Status, true, nil
 }
 
 func (m *MigrationManager) Close() error {

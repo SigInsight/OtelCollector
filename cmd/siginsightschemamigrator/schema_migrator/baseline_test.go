@@ -12,10 +12,9 @@ import (
 
 func TestClassifyBaselineState(t *testing.T) {
 	spec := BaselineSpec{
-		Database:           SigInsightLogsDB,
-		BaseMigrations:     migrationRecords(1, 2),
-		RequiredMigrations: migrationRecords(1000, 1001),
-		OptionalMigrations: migrationRecords(2001),
+		Database:             SigInsightLogsDB,
+		BaseMigrationIDs:     []uint64{1, 2},
+		RequiredMigrationIDs: []uint64{1000, 1001},
 	}
 
 	tests := []struct {
@@ -25,7 +24,6 @@ func TestClassifyBaselineState(t *testing.T) {
 		missing  []uint64
 		nonFinal []uint64
 		ahead    []uint64
-		optional []uint64
 	}{
 		{
 			name: "empty",
@@ -46,20 +44,6 @@ func TestClassifyBaselineState(t *testing.T) {
 				},
 			},
 			state: BaselineStateCompleteFresh,
-		},
-		{
-			name: "complete fresh with optional migration",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 2,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FinishedStatus,
-					2001: FinishedStatus,
-				},
-			},
-			state:    BaselineStateCompleteFresh,
-			optional: []uint64{2001},
 		},
 		{
 			name: "complete legacy",
@@ -87,18 +71,17 @@ func TestClassifyBaselineState(t *testing.T) {
 			missing: []uint64{1001},
 		},
 		{
-			name: "failed optional migration",
+			name: "failed migration",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,
 				TrackingTableCount: 2,
 				MigrationStatuses: map[uint64]string{
 					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FinishedStatus,
-					2001: FailedStatus,
+					1000: FinishedStatus, 1001: FailedStatus,
 				},
 			},
 			state:    BaselineStatePartial,
-			nonFinal: []uint64{2001},
+			nonFinal: []uint64{1001},
 		},
 		{
 			name: "incomplete tracking tables",
@@ -135,7 +118,6 @@ func TestClassifyBaselineState(t *testing.T) {
 			assert.Equal(t, tc.missing, got.MissingMigrationIDs)
 			assert.Equal(t, tc.nonFinal, got.NonFinishedMigrationIDs)
 			assert.Equal(t, tc.ahead, got.UnexpectedMigrationIDs)
-			assert.Equal(t, tc.optional, got.AppliedOptionalMigrationIDs)
 		})
 	}
 }
@@ -144,7 +126,6 @@ func TestV1BaselineSpecs(t *testing.T) {
 	specs := V1BaselineSpecs()
 	require.Len(t, specs, len(Databases))
 	assert.Equal(t, Databases, baselineDatabases(specs))
-	assert.Equal(t, []uint64{2001}, sortedMigrationIDs(specs[2].OptionalMigrations))
 }
 
 func TestInspectBaselineState(t *testing.T) {
@@ -180,21 +161,13 @@ func TestInspectBaselineState(t *testing.T) {
 	require.NoError(t, err)
 
 	got, err := manager.InspectBaselineState(context.Background(), BaselineSpec{
-		Database:           SigInsightLogsDB,
-		BaseMigrations:     migrationRecords(1),
-		RequiredMigrations: migrationRecords(1000),
+		Database:             SigInsightLogsDB,
+		BaseMigrationIDs:     []uint64{1},
+		RequiredMigrationIDs: []uint64{1000},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, BaselineStateCompleteFresh, got.State)
 	require.NoError(t, conn.ExpectationsWereMet())
-}
-
-func migrationRecords(ids ...uint64) []SchemaMigrationRecord {
-	records := make([]SchemaMigrationRecord, 0, len(ids))
-	for _, id := range ids {
-		records = append(records, SchemaMigrationRecord{MigrationID: id})
-	}
-	return records
 }
 
 func baselineDatabases(specs []BaselineSpec) []string {
@@ -203,12 +176,4 @@ func baselineDatabases(specs []BaselineSpec) []string {
 		databases = append(databases, spec.Database)
 	}
 	return databases
-}
-
-func sortedMigrationIDs(migrations []SchemaMigrationRecord) []uint64 {
-	ids := make([]uint64, 0, len(migrations))
-	for _, migration := range migrations {
-		ids = append(ids, migration.MigrationID)
-	}
-	return ids
 }

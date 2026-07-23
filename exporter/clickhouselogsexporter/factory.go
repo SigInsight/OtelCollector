@@ -53,9 +53,8 @@ func createDefaultConfig() component.Config {
 			FetchKeysInterval: 10 * time.Minute,
 			MaxDistinctValues: 25000,
 		},
-		LogLevelConcurrency:       utils.ToPointer(utils.Concurrency()),
-		PromotedPathsSyncInterval: utils.ToPointer(defaultPromotedPathsSyncInterval),
-		MaxAllowedDataAgeDays:     utils.ToPointer(defaultMaxAllowedDataAgeDays),
+		LogLevelConcurrency:   utils.ToPointer(utils.Concurrency()),
+		MaxAllowedDataAgeDays: utils.ToPointer(defaultMaxAllowedDataAgeDays),
 	}
 }
 
