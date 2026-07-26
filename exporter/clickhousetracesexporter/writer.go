@@ -280,13 +280,29 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 		shouldSkipKeys = keys.(map[string]shouldSkipKey)
 	}
 
-	tagKeyStatement, err = w.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", w.traceDatabase, w.attributeKeyTable), driver.WithReleaseConnection())
+	tagKeyStatement, err = w.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (tagKey, tagType, dataType, isColumn)",
+			w.traceDatabase,
+			w.attributeKeyTable,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("could not prepare batch for span attributes key table due to error: %w", err)
 	}
 	defer tagKeyStatement.Close()
 
-	tagStatementV2, err = w.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", w.traceDatabase, w.attributeTableV2), driver.WithReleaseConnection())
+	tagStatementV2, err = w.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value)",
+			w.traceDatabase,
+			w.attributeTableV2,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("could not prepare batch for span attributes table v2 due to error: %w", err)
 	}
