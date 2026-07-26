@@ -225,7 +225,15 @@ func (w *SpanWriter) writeErrorBatchV3(ctx context.Context, batchSpans []*SpanV3
 			_ = statement.Abort()
 		}
 	}()
-	statement, err = w.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", w.traceDatabase, w.errorTable), driver.WithReleaseConnection())
+	statement, err = w.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (timestamp, errorID, groupID, traceID, spanID, serviceName, exceptionType, exceptionMessage, exceptionStacktrace, exceptionEscaped, resourceTagsMap)",
+			w.traceDatabase,
+			w.errorTable,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("could not prepare batch for error table: %w", err)
 	}
@@ -524,7 +532,11 @@ func (w *SpanWriter) WriteResourcesV3(ctx context.Context, resourcesSeen map[int
 
 	insertResourcesStmtV3, err := w.db.PrepareBatch(
 		ctx,
-		fmt.Sprintf("INSERT INTO %s.%s", w.traceDatabase, w.resourceTableV3),
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (labels, fingerprint, seen_at_ts_bucket_start)",
+			w.traceDatabase,
+			w.resourceTableV3,
+		),
 		driver.WithReleaseConnection(),
 	)
 	if err != nil {
