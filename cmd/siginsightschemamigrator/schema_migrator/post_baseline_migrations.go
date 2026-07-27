@@ -35,7 +35,133 @@ var PostBaselineSyncMigrations = []PostBaselineMigration{}
 // work that must run after the synchronous release upgrade. Do not mix sync and
 // async operations in one migration; use consecutive IDs and make the sync
 // migration the lower ID when both are introduced in the same release.
-var PostBaselineAsyncMigrations = []PostBaselineMigration{}
+var PostBaselineAsyncMigrations = []PostBaselineMigration{
+	{
+		Database: SigInsightTracesDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2000,
+			UpItems: dropTables(SigInsightTracesDB,
+				"distributed_dependency_graph_minutes_v2",
+				"distributed_signoz_error_index_v2",
+				"distributed_signoz_index_v2",
+				"distributed_signoz_index_v3",
+				"distributed_signoz_spans",
+				"distributed_span_attributes",
+				"distributed_span_attributes_keys",
+				"distributed_tag_attributes_v2",
+				"distributed_top_level_operations",
+				"distributed_trace_summary",
+				"distributed_traces_v3_resource",
+				"distributed_usage",
+				"distributed_usage_explorer",
+				"span_attributes",
+			),
+		},
+	},
+	{
+		Database: SigInsightMetricsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2000,
+			UpItems: dropTables(SigInsightMetricsDB,
+				"distributed_exp_hist",
+				"distributed_metadata",
+				"distributed_samples_v2",
+				"distributed_samples_v4",
+				"distributed_samples_v4_agg_30m",
+				"distributed_samples_v4_agg_5m",
+				"distributed_time_series_v2",
+				"distributed_time_series_v4",
+				"distributed_time_series_v4_1day",
+				"distributed_time_series_v4_1week",
+				"distributed_time_series_v4_6hrs",
+				"distributed_updated_metadata",
+				"distributed_usage",
+				"samples_v2",
+				"time_series_v2",
+			),
+		},
+	},
+	// Logs migration 2001 was previously used to add body_v2, body_promoted,
+	// and their JSON-path metadata. Keep the ID registered so databases that
+	// completed the legacy migration remain valid; 2002 performs the cleanup.
+	{
+		Database: SigInsightLogsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems: []Operation{
+				DropTableOperation{Database: SigInsightMetadataDB, Table: "distributed_json_path_types"},
+			},
+		},
+	},
+	{
+		Database: SigInsightLogsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2002,
+			UpItems: []Operation{
+				AlterTableDropIndex{Database: SigInsightLogsDB, Table: "logs_v2", Index: Index{Name: "body_v2_string_ngram_idx"}},
+				AlterTableDropIndex{Database: SigInsightLogsDB, Table: "logs_v2", Index: Index{Name: "body_v2_string_token_idx"}},
+				AlterTableDropIndex{Database: SigInsightLogsDB, Table: "logs_v2", Index: Index{Name: "body_v2_paths_ngram_idx"}},
+				AlterTableDropIndex{Database: SigInsightLogsDB, Table: "logs_v2", Index: Index{Name: "body_v2_paths_token_idx"}},
+				AlterTableDropColumn{Database: SigInsightLogsDB, Table: "logs_v2", Column: Column{Name: "body_promoted"}},
+				AlterTableDropColumn{Database: SigInsightLogsDB, Table: "logs_v2", Column: Column{Name: "body_v2"}},
+				DropTableOperation{Database: SigInsightMetadataDB, Table: "distributed_json_path_types"},
+				DropTableOperation{Database: SigInsightMetadataDB, Table: "json_path_types"},
+			},
+		},
+	},
+	{
+		Database: SigInsightLogsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2003,
+			UpItems: dropTables(SigInsightLogsDB,
+				"distributed_logs_attribute_keys",
+				"distributed_logs_resource_keys",
+				"distributed_logs_v2",
+				"distributed_logs_v2_resource",
+				"distributed_tag_attributes_v2",
+				"distributed_usage",
+			),
+		},
+	},
+	{
+		Database: SigInsightMetadataDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2000,
+			UpItems: dropTables(SigInsightMetadataDB,
+				"distributed_attributes_metadata",
+				"distributed_column_evolution_metadata",
+				"column_evolution_metadata",
+			),
+		},
+	},
+	{
+		Database: SigInsightAnalyticsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2000,
+			UpItems: dropTables(SigInsightAnalyticsDB,
+				"distributed_rule_state_history_v0",
+			),
+		},
+	},
+	{
+		Database: SigInsightMeterDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2000,
+			UpItems: dropTables(SigInsightMeterDB,
+				"distributed_samples",
+				"distributed_samples_agg_1d",
+			),
+		},
+	},
+}
+
+func dropTables(database string, tables ...string) []Operation {
+	operations := make([]Operation, 0, len(tables))
+	for _, table := range tables {
+		operations = append(operations, DropTableOperation{Database: database, Table: table})
+	}
+	return operations
+}
 
 // ValidatePostBaselineMigrations catches registry mistakes before any schema
 // operation runs. It is intentionally strict because migration failures are not
