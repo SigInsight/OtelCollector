@@ -114,7 +114,7 @@ func (e *UsageCollector) ExportMetrics(ctx context.Context, metrics []*metricdat
 
 		e.logger.Debug("ExportMetrics", zap.Any("tenant", tenant), zap.Any("collectorID", CollectorID.String()), zap.Any("exporterID", e.exporterID.String()), zap.Any("time", time), zap.Any("encryptedData", string(encryptedData)))
 		// insert everything as a new row
-		err = e.db.Exec(ctx, fmt.Sprintf("insert into %s.%s values ($1, $2, $3, $4, $5)", e.dbName, e.tableName), tenant, CollectorID.String(), e.exporterID.String(), time, string(encryptedData))
+		err = e.db.Exec(ctx, fmt.Sprintf("insert into %s.%s (tenant, collector_id, exporter_id, timestamp, data) values ($1, $2, $3, $4, $5)", e.dbName, e.tableName), tenant, CollectorID.String(), e.exporterID.String(), time, string(encryptedData))
 		if err != nil {
 			e.logger.Error("ExportMetrics insert error", zap.Error(err))
 			return err

@@ -28,7 +28,7 @@ const (
 	sixHours           = 6 * time.Hour                      // window size for attributes aggregation
 	sixHoursInMs       = int64(sixHours / time.Millisecond) // window size in ms
 	valuTrackerKeysTTL = 45 * time.Minute                   // ttl for keys in value tracker
-	insertStmtQuery    = "INSERT INTO signoz_metadata.attributes_metadata"
+	insertStmtQuery    = "INSERT INTO signoz_metadata.attributes_metadata (unix_milli, data_source, resource_fingerprint, attrs_fingerprint, resource_attributes, attributes)"
 )
 
 type tagValueCountFromDB struct {

@@ -125,9 +125,9 @@ func TestExporterPushLogsData(t *testing.T) {
 	}
 
 	// expect prepare batch for 5 tables
-	tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.tag_attributes_v2")
-	attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_attribute_keys")
-	resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_resource_keys")
+	tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.tag_attributes_v2 \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
+	attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_attribute_keys \\(name, datatype\\)")
+	resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_resource_keys \\(name, datatype\\)")
 	logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_v2.*")
 	logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_v2_resource.*")
 
@@ -284,9 +284,9 @@ func TestExporterConcurrency(t *testing.T) {
 			}
 
 			// expect prepare batch for 5 tables
-			tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.tag_attributes_v2")
-			attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_attribute_keys")
-			resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_resource_keys")
+			tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.tag_attributes_v2 \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
+			attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_attribute_keys \\(name, datatype\\)")
+			resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_resource_keys \\(name, datatype\\)")
 			logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_v2.*")
 			logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO signoz_logs.logs_v2_resource.*")
 

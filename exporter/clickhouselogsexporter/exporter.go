@@ -416,19 +416,43 @@ func (e *clickhouseLogsExporter) pushToClickhouse(ctx context.Context, ld plog.L
 	}
 
 	// Prepare batches first
-	tagStatementV2, err := e.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", databaseName, distributedTagAttributesV2), driver.WithReleaseConnection())
+	tagStatementV2, err := e.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value)",
+			databaseName,
+			distributedTagAttributesV2,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("PrepareTagBatchV2:%w", err)
 	}
 	defer tagStatementV2.Close()
 
-	attributeKeysStmt, err = e.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", databaseName, distributedLogsAttributeKeys), driver.WithReleaseConnection())
+	attributeKeysStmt, err = e.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (name, datatype)",
+			databaseName,
+			distributedLogsAttributeKeys,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("PrepareAttributeKeysBatch:%w", err)
 	}
 	defer attributeKeysStmt.Close()
 
-	resourceKeysStmt, err = e.db.PrepareBatch(ctx, fmt.Sprintf("INSERT INTO %s.%s", databaseName, distributedLogsResourceKeys), driver.WithReleaseConnection())
+	resourceKeysStmt, err = e.db.PrepareBatch(
+		ctx,
+		fmt.Sprintf(
+			"INSERT INTO %s.%s (name, datatype)",
+			databaseName,
+			distributedLogsResourceKeys,
+		),
+		driver.WithReleaseConnection(),
+	)
 	if err != nil {
 		return fmt.Errorf("PrepareResourceKeysBatch:%w", err)
 	}
