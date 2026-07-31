@@ -85,14 +85,14 @@ func TestLegacyLogsJSONCleanupMigrations(t *testing.T) {
 		cleanupSQL = append(cleanupSQL, operation.ToSQL())
 	}
 	require.Equal(t, []string{
-		"ALTER TABLE signoz_logs.logs_v2 DROP INDEX IF EXISTS body_v2_string_ngram_idx",
-		"ALTER TABLE signoz_logs.logs_v2 DROP INDEX IF EXISTS body_v2_string_token_idx",
-		"ALTER TABLE signoz_logs.logs_v2 DROP INDEX IF EXISTS body_v2_paths_ngram_idx",
-		"ALTER TABLE signoz_logs.logs_v2 DROP INDEX IF EXISTS body_v2_paths_token_idx",
-		"ALTER TABLE signoz_logs.logs_v2 DROP COLUMN IF EXISTS body_promoted",
-		"ALTER TABLE signoz_logs.logs_v2 DROP COLUMN IF EXISTS body_v2",
-		"DROP TABLE IF EXISTS signoz_metadata.distributed_json_path_types",
-		"DROP TABLE IF EXISTS signoz_metadata.json_path_types",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP INDEX IF EXISTS body_v2_string_ngram_idx",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP INDEX IF EXISTS body_v2_string_token_idx",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP INDEX IF EXISTS body_v2_paths_ngram_idx",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP INDEX IF EXISTS body_v2_paths_token_idx",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP COLUMN IF EXISTS body_promoted",
+		"ALTER TABLE siginsight_logs.logs_v2 DROP COLUMN IF EXISTS body_v2",
+		"DROP TABLE IF EXISTS siginsight_metadata.distributed_json_path_types",
+		"DROP TABLE IF EXISTS siginsight_metadata.json_path_types",
 	}, cleanupSQL)
 
 	require.Equal(t, []uint64{2001, 2002, 2003}, baselineSpecForDatabase(t, SigInsightLogsDB).AllowedMigrationIDs)

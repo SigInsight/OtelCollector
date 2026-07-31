@@ -3,6 +3,8 @@ package migrate
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -97,7 +99,12 @@ func (cmd *bootstrap) Run(ctx context.Context) error {
 }
 
 func (cmd *bootstrap) Bootstrap(ctx context.Context) error {
-	err := cmd.CreateDatabases(ctx)
+	err := cmd.UpgradeLegacyStorageNames(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = cmd.CreateDatabases(ctx)
 	if err != nil {
 		return err
 	}
@@ -108,6 +115,167 @@ func (cmd *bootstrap) Bootstrap(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// UpgradeLegacyStorageNames adopts a pre-SigInsight telemetry installation
+// without copying its data. ClickHouse does not rewrite view definitions when
+// a database or source table is renamed, so affected views are recreated from
+// the current frozen baseline after the physical names are switched.
+func (cmd *bootstrap) UpgradeLegacyStorageNames(ctx context.Context) error {
+	databases, err := cmd.databaseNames(ctx)
+	if err != nil {
+		return NewRetryableError(err)
+	}
+
+	changed := false
+	legacyRenames := schemamigrator.LegacyDatabaseRenames()
+	legacyDatabases := make([]string, 0, len(legacyRenames))
+	for legacy := range legacyRenames {
+		legacyDatabases = append(legacyDatabases, legacy)
+	}
+	sort.Strings(legacyDatabases)
+	for _, legacy := range legacyDatabases {
+		current := legacyRenames[legacy]
+		_, legacyExists := databases[legacy]
+		_, currentExists := databases[current]
+		if legacyExists && currentExists {
+			return New(fmt.Errorf("both legacy database %q and current database %q exist; resolve the conflict before retrying", legacy, current))
+		}
+		if !legacyExists {
+			continue
+		}
+		if err := cmd.conn.Exec(ctx, fmt.Sprintf("RENAME DATABASE %s TO %s", legacy, current)); err != nil {
+			return New(err)
+		}
+		changed = true
+	}
+
+	for _, rename := range []struct{ old, new string }{
+		{"signoz_index_v3", "span_index_v3"},
+		{"signoz_index_v2", "span_index_v2"},
+		{"signoz_error_index_v2", "error_index_v2"},
+		{"signoz_spans", "legacy_spans"},
+	} {
+		renamed, err := cmd.renameTableIfNeeded(ctx, schemamigrator.SigInsightTracesDB, rename.old, rename.new)
+		if err != nil {
+			return New(err)
+		}
+		changed = changed || renamed
+	}
+	if !changed {
+		return nil
+	}
+
+	if err := cmd.restoreCurrentViews(ctx); err != nil {
+		return New(err)
+	}
+	if err := cmd.rewriteLegacyViewDefinitions(ctx); err != nil {
+		return New(err)
+	}
+	return nil
+}
+
+func (cmd *bootstrap) databaseNames(ctx context.Context) (map[string]struct{}, error) {
+	rows, err := cmd.conn.Query(ctx, "SELECT name FROM system.databases")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	databases := make(map[string]struct{})
+	for rows.Next() {
+		var database string
+		if err := rows.Scan(&database); err != nil {
+			return nil, err
+		}
+		databases[database] = struct{}{}
+	}
+	return databases, rows.Err()
+}
+
+func (cmd *bootstrap) renameTableIfNeeded(ctx context.Context, database, oldName, newName string) (bool, error) {
+	rows, err := cmd.conn.Query(ctx, "SELECT name FROM system.tables WHERE database = ? AND name IN (?, ?)", database, oldName, newName)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	exists := make(map[string]struct{}, 2)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return false, err
+		}
+		exists[name] = struct{}{}
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	_, oldExists := exists[oldName]
+	_, newExists := exists[newName]
+	if oldExists && newExists {
+		return false, fmt.Errorf("both legacy table %s.%s and current table %s.%s exist", database, oldName, database, newName)
+	}
+	if !oldExists {
+		return false, nil
+	}
+	return true, cmd.conn.Exec(ctx, fmt.Sprintf("RENAME TABLE %s.%s TO %s.%s", database, oldName, database, newName))
+}
+
+func (cmd *bootstrap) restoreCurrentViews(ctx context.Context) error {
+	for _, operation := range schemamigrator.V1MaterializedViewOperations() {
+		if err := cmd.conn.Exec(ctx, operation.ToSQL()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (cmd *bootstrap) rewriteLegacyViewDefinitions(ctx context.Context) error {
+	rows, err := cmd.conn.Query(ctx, "SELECT database, name, create_table_query FROM system.tables WHERE database IN (?, ?, ?, ?, ?, ?) AND engine IN ('MaterializedView', 'View')", schemamigrator.SigInsightLogsDB, schemamigrator.SigInsightMetricsDB, schemamigrator.SigInsightTracesDB, schemamigrator.SigInsightMetadataDB, schemamigrator.SigInsightAnalyticsDB, schemamigrator.SigInsightMeterDB)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	type viewDefinition struct{ database, name, ddl string }
+	definitions := make([]viewDefinition, 0)
+	for rows.Next() {
+		var definition viewDefinition
+		if err := rows.Scan(&definition.database, &definition.name, &definition.ddl); err != nil {
+			return err
+		}
+		if rewriteLegacyStorageName(definition.ddl) != definition.ddl {
+			definitions = append(definitions, definition)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, definition := range definitions {
+		if err := cmd.conn.Exec(ctx, fmt.Sprintf("DROP TABLE %s.%s", definition.database, definition.name)); err != nil {
+			return err
+		}
+		if err := cmd.conn.Exec(ctx, rewriteLegacyStorageName(definition.ddl)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func rewriteLegacyStorageName(value string) string {
+	// Keep this ordered. A map iteration here would make schema-rewrite output
+	// nondeterministic and is unnecessary for this fixed one-time migration.
+	return strings.NewReplacer(
+		"signoz_logs", schemamigrator.SigInsightLogsDB,
+		"signoz_metrics", schemamigrator.SigInsightMetricsDB,
+		"signoz_traces", schemamigrator.SigInsightTracesDB,
+		"signoz_metadata", schemamigrator.SigInsightMetadataDB,
+		"signoz_analytics", schemamigrator.SigInsightAnalyticsDB,
+		"signoz_meter", schemamigrator.SigInsightMeterDB,
+		"signoz_index_v3", "span_index_v3",
+		"signoz_index_v2", "span_index_v2",
+		"signoz_error_index_v2", "error_index_v2",
+		"signoz_spans", "legacy_spans",
+	).Replace(value)
 }
 
 func (cmd *bootstrap) CreateDatabases(ctx context.Context) error {

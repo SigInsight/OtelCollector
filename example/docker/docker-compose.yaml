@@ -108,10 +108,10 @@ services:
     volumes:
       - sqlite:/var/lib/siginsight/
     environment:
-      - SIGNOZ_ALERTMANAGER_PROVIDER=signoz
-      - SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
-      - SIGNOZ_SQLSTORE_SQLITE_PATH=/var/lib/siginsight/siginsight.db
-      - SIGNOZ_TOKENIZER_JWT_SECRET=secret
+      - SIGINSIGHT_ALERTMANAGER_PROVIDER=siginsight
+      - SIGINSIGHT_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
+      - SIGINSIGHT_SQLSTORE_SQLITE_PATH=/var/lib/siginsight/siginsight.db
+      - SIGINSIGHT_TOKENIZER_JWT_SECRET=secret
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v1/health"]
       interval: 30s

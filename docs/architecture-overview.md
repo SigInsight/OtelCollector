@@ -104,12 +104,12 @@ ReportsEffectiveConfig | ReportsHealth
 
 | 数据流 | 写入方 | 读取方 | 库.表 |
 |---|---|---|---|
-| traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `signoz_traces.signoz_index_v3` 等 |
-| metrics 主数据 | collector (`signozclickhousemetrics`) | SigInsight UI 后端 | `signoz_metrics.*` |
-| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `signoz_logs.logs_v2` |
-| **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigInsight UI 后端 | `signoz_metadata.*` |
-| **meter**（用量/计费指标）| collector (`signozclickhousemeter`，经 `signozmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `signoz_meter.*` |
-| span metrics（RED 指标，由 spans 衍生）| collector (`signozspanmetricsprocessor` → `signozclickhousemetrics`) | SigInsight UI 后端（Service Map 等） | `signoz_metrics.*` |
+| traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `siginsight_traces.span_index_v3` 等 |
+| metrics 主数据 | collector (`siginsightclickhousemetrics`) | SigInsight UI 后端 | `siginsight_metrics.*` |
+| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `siginsight_logs.logs_v2` |
+| **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigInsight UI 后端 | `siginsight_metadata.*` |
+| **meter**（用量/计费指标）| collector (`siginsightclickhousemeter`，经 `siginsightmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `siginsight_meter.*` |
+| span metrics（RED 指标，由 spans 衍生）| collector (`siginsightspanmetricsprocessor` → `siginsightclickhousemetrics`) | SigInsight UI 后端（Service Map 等） | `siginsight_metrics.*` |
 
 这就是为什么"OpAMP 下发 config"里每个 pipeline 都扇出 3 个 exporter——SigInsight 后端**需要**这 3 类数据都到 CH 才能正常工作。
 
@@ -157,14 +157,14 @@ OpAMP 模式下：reload 失败会回滚到上一版 config（[server_client.go:
 | 云厂商/平台专属遥测拉取 | githubreceiver, gitlabreceiver, dockerstatsreceiver, podmanreceiver, jmxreceiver, redfishreceiver, nsxtreceiver, expvarreceiver, ciscoosreceiver, envoyalsreceiver, k8sobjectsreceiver, k8sclusterreceiver, k8seventsreceiver, kubeletstatsreceiver, otelarrowreceiver, osqueryreceiver, otlpjsonfilereceiver, simpleprometheusreceiver, systemdreceiver, webhookeventreceiver, windowsperfcountersreceiver, windowsservicereceiver, filestatsreceiver, yanggrpcreceiver, pprofreceiver | OTLP / hostmetrics / prometheus 还在；Prometheus 仅保留 static/file/HTTP 服务发现 |
 | 写 Prometheus / 文件 / syslog / Alertmanager / Cassandra / Datadog / Zipkin | prometheusexporter, prometheusremotewriteexporter, fileexporter, syslogexporter, alertmanagerexporter, cassandraexporter, zipkinexporter, datadogconnector, grafanacloudconnector | **全没了**。出站只能 OTLP/OTLPHTTP/debug/nop/clickhouse* |
 | 认证 extension | oauth2clientauthextension, oidcauthextension, azureauthextension, basicauthextension, bearertokenauthextension | 全没了；需在上游网关处理认证 |
-| 轮询/负载均衡/异常追踪 connector | failoverconnector, loadbalancingexporter, roundrobinconnector, exceptionsconnector, slowsqlconnector, metricsaslogsconnector, otlpjsonconnector, sumconnector, countconnector, forwardconnector, routingconnector, servicegraphconnector, signaltometricsconnector, spanmetricsconnector | 只保留 `signozmeter` |
-| 通用及高级 processor | attributesprocessor, resourceprocessor, transformprocessor, logdedupprocessor, intervalprocessor, isolationforestprocessor, dnslookupprocessor, geoipprocessor, schemaprocessor, groupbytraceprocessor, unrollprocessor | 保留 filter、batch、memory_limiter、resourcedetection、signozlogspipeline、signozspanmetrics、signoztailsampler |
+| 轮询/负载均衡/异常追踪 connector | failoverconnector, loadbalancingexporter, roundrobinconnector, exceptionsconnector, slowsqlconnector, metricsaslogsconnector, otlpjsonconnector, sumconnector, countconnector, forwardconnector, routingconnector, servicegraphconnector, signaltometricsconnector, spanmetricsconnector | 只保留 `siginsightmeter` |
+| 通用及高级 processor | attributesprocessor, resourceprocessor, transformprocessor, logdedupprocessor, intervalprocessor, isolationforestprocessor, dnslookupprocessor, geoipprocessor, schemaprocessor, groupbytraceprocessor, unrollprocessor | 保留 filter、batch、memory_limiter、resourcedetection、siginsightlogspipeline、siginsightspanmetrics、signoztailsampler |
 | Docker / ECS / 主机 / Kubernetes observer | dockerobserver, ecsobserver, ecstaskobserver, hostobserver, k8sobserver | 全没了 |
 | Jaeger Remote Sampling 下发 extension | jaegerremotesampling | `signoztailsampler` 仍提供 collector 内部 tail sampling |
 
 ### 仍可用的核心能力
 
-OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/signozlogspipeline/signoztailsampler/signozspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigInsight 主链路全程**，精简过程严格保留。
+OTLP gRPC/HTTP 进 → batch/memory_limiter/filter/resourcedetection/siginsightlogspipeline/signoztailsampler/siginsightspanmetrics 处理 → ClickHouse traces/logs/metrics/meter/metadata 出 + Prometheus 进/scrape，**这是 SigInsight 主链路全程**，精简过程严格保留。
 
 本仓库的 `resourcedetection` 是受控精简实现，只注册 `env` 和 `system` detector；配置云厂商 detector（如 `ec2`、`ecs`、`eks`、`gcp`、`azure`）会在加载时返回 `invalid detector key`。
 
@@ -209,8 +209,8 @@ Pipeline key 前缀决定 signal 类型：`traces` / `metrics` / `logs` / `profi
 ```
 
 - **多 receiver**：每个 receiver 都把数据塞到同一组 processor 链入口（fan-in）。
-- **多 exporter**：链尾把数据 fan-out 给每个 exporter（**复制 pdata 对象，每个 exporter 独立处理**——这就是为什么 OpAMP 那份 config 里 traces pipeline 写 `[clickhousetraces, metadataexporter, signozmeter]` 会让流量乘以 3）。
-- **processor 顺序敏感**：`batch` 放在 `signozspanmetrics/delta` 之后 vs 之前结果不同。
+- **多 exporter**：链尾把数据 fan-out 给每个 exporter（**复制 pdata 对象，每个 exporter 独立处理**——这就是为什么 OpAMP 那份 config 里 traces pipeline 写 `[clickhousetraces, metadataexporter, siginsightmeter]` 会让流量乘以 3）。
+- **processor 顺序敏感**：`batch` 放在 `siginsightspanmetrics/delta` 之后 vs 之前结果不同。
 
 ### 每段配置控制什么行为
 
@@ -241,14 +241,14 @@ prometheus:
 | `filter` | 按条件丢弃 |
 | `transform` (OTTL) | 通用转换语言 |
 | `tail_sampling` / `signoztailsampler` | 整条 trace 决策保留/丢弃 |
-| `signozspanmetrics` | 从 trace 衍生 RED 指标 |
+| `siginsightspanmetrics` | 从 trace 衍生 RED 指标 |
 
 #### exporters
 出站协议、目标地址、并发/重试/队列：
 
 ```yaml
 clickhousetraces:
-  datasource: tcp://clickhouse:9000/signoz_traces
+  datasource: tcp://clickhouse:9000/siginsight_traces
   retry_on_failure: {enabled: true, initial_interval: 5s}
   sending_queue: {enabled: true, queue_size: 100, num_consumers: 5}
 ```
@@ -258,16 +258,16 @@ clickhousetraces:
 
 ```yaml
 connectors:
-  signozmeter:
+  siginsightmeter:
     dimensions: [...]
     metrics_flush_interval: 1h
 
 service.pipelines:
   traces:
-    exporters: [..., signozmeter]       # 这里它是 exporter
+    exporters: [..., siginsightmeter]       # 这里它是 exporter
   metrics/meter:
-    receivers: [signozmeter]            # 这里它是 receiver
-    exporters: [signozclickhousemeter]  # 输出真出口
+    receivers: [siginsightmeter]            # 这里它是 receiver
+    exporters: [siginsightclickhousemeter]  # 输出真出口
 ```
 
 用途：跨 signal 类型转换（traces → metrics）、流量分发、采样后再聚合。

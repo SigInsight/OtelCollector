@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("signozlogspipeline")
+	Type      = component.MustNewType("siginsightlogspipeline")
 	ScopeName = "github.com/SigInsight/OtelCollector/processor/signozlogspipelineprocessor"
 )
 

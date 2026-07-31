@@ -12,18 +12,32 @@ import (
 )
 
 var (
-	SigInsightLogsDB      = "signoz_logs"
-	SigInsightMetricsDB   = "signoz_metrics"
-	SigInsightTracesDB    = "signoz_traces"
-	SigInsightMetadataDB  = "signoz_metadata"
-	SigInsightAnalyticsDB = "signoz_analytics"
-	SigInsightMeterDB     = "signoz_meter"
+	SigInsightLogsDB      = "siginsight_logs"
+	SigInsightMetricsDB   = "siginsight_metrics"
+	SigInsightTracesDB    = "siginsight_traces"
+	SigInsightMetadataDB  = "siginsight_metadata"
+	SigInsightAnalyticsDB = "siginsight_analytics"
+	SigInsightMeterDB     = "siginsight_meter"
 	Databases             = []string{SigInsightTracesDB, SigInsightMetricsDB, SigInsightLogsDB, SigInsightMetadataDB, SigInsightAnalyticsDB, SigInsightMeterDB}
 
 	InProgressStatus = "in-progress"
 	FinishedStatus   = "finished"
 	FailedStatus     = "failed"
 )
+
+// LegacyDatabaseRenames is the one-time storage identity upgrade from the
+// former product-prefixed telemetry databases. Keep these literals only here:
+// bootstrap uses them to adopt existing installations without copying data.
+func LegacyDatabaseRenames() map[string]string {
+	return map[string]string{
+		"signoz_logs":      SigInsightLogsDB,
+		"signoz_metrics":   SigInsightMetricsDB,
+		"signoz_traces":    SigInsightTracesDB,
+		"signoz_metadata":  SigInsightMetadataDB,
+		"signoz_analytics": SigInsightAnalyticsDB,
+		"signoz_meter":     SigInsightMeterDB,
+	}
+}
 
 type SchemaMigrationRecord struct {
 	MigrationID uint64

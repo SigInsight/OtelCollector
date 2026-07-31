@@ -3,7 +3,7 @@
 # supplied by the test runner so the same current Collector binary can run
 # against an isolated ClickHouse 25.5.6 container.
 connectors:
-  signozmeter:
+  siginsightmeter:
     metrics_flush_interval: 100ms
     dimensions:
       - name: service.name
@@ -25,9 +25,9 @@ exporters:
   clickhouselogsexporter:
     dsn: ${env:SIGINSIGHT_TEST_LOGS_DSN}
     use_new_schema: true
-  signozclickhousemetrics:
+  siginsightclickhousemetrics:
     dsn: ${env:SIGINSIGHT_TEST_METRICS_DSN}
-  signozclickhousemeter:
+  siginsightclickhousemeter:
     dsn: ${env:SIGINSIGHT_TEST_METER_DSN}
   metadataexporter:
     dsn: ${env:SIGINSIGHT_TEST_METADATA_DSN}
@@ -37,16 +37,16 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhousetraces, metadataexporter, signozmeter]
+      exporters: [clickhousetraces, metadataexporter, siginsightmeter]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+      exporters: [siginsightclickhousemetrics, metadataexporter, siginsightmeter]
     metrics/meter:
-      receivers: [signozmeter]
+      receivers: [siginsightmeter]
       processors: [batch]
-      exporters: [signozclickhousemeter]
+      exporters: [siginsightclickhousemeter]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhouselogsexporter, metadataexporter, signozmeter]
+      exporters: [clickhouselogsexporter, metadataexporter, siginsightmeter]

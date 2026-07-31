@@ -1,4 +1,4 @@
-type: signozmeter
+type: siginsightmeter
 
 status:
   class: connector

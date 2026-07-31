@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("signozspanmetrics")
+	Type      = component.MustNewType("siginsightspanmetrics")
 	ScopeName = "github.com/SigInsight/OtelCollector/processor/signozspanmetricsprocessor"
 )
 

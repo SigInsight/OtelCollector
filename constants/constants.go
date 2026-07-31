@@ -1,3 +1,3 @@
 package constants
 
-const SigInsightMetadataDB = "signoz_metadata"
+const SigInsightMetadataDB = "siginsight_metadata"

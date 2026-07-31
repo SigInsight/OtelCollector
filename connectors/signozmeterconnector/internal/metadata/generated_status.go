@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("signozmeter")
+	Type      = component.MustNewType("siginsightmeter")
 	ScopeName = "github.com/SigInsight/OtelCollector/connectors/signozmeterconnector"
 )
 

@@ -1198,7 +1198,7 @@ func Test_shutdown(t *testing.T) {
 	conn.ExpectPrepareBatch("INSERT INTO . (env, temporality, metric_name, description, unit, type, is_monotonic, fingerprint, unix_milli, labels, attrs, scope_attrs, resource_attrs, __normalized, inserted_at_unix_milli) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)") //time series query
 	conn.ExpectPrepareBatch("INSERT INTO . (env, temporality, metric_name, fingerprint, unix_milli, count, sum, min, max, sketch, flags, inserted_at_unix_milli) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")                                                                      //exp hist query
 	conn.ExpectPrepareBatch("INSERT INTO . (temporality, metric_name, description, unit, type, is_monotonic, attr_name, attr_type, attr_datatype, attr_string_value, first_reported_unix_milli, last_reported_unix_milli) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")             //metadata query
-	conn.ExpectExec("insert into signoz_metrics.usage (tenant, collector_id, exporter_id, timestamp, data) values ($1, $2, $3, $4, $5)")                                                                                                                                            // usage exporter query
+	conn.ExpectExec("insert into siginsight_metrics.usage (tenant, collector_id, exporter_id, timestamp, data) values ($1, $2, $3, $4, $5)")                                                                                                                                            // usage exporter query
 	conn.ExpectClose()
 	usageCollector := usage.NewUsageCollector(
 		id,
@@ -1206,7 +1206,7 @@ func Test_shutdown(t *testing.T) {
 		usage.Options{
 			ReportingInterval: 5 * time.Minute,
 		},
-		"signoz_metrics",
+		"siginsight_metrics",
 		UsageExporter, logger)
 	chExporter, err := NewClickHouseExporter(
 		WithConn(conn),
