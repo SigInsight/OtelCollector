@@ -18,8 +18,8 @@ import (
 const (
 	SigNozSentLogRecordsKey      = "singoz_sent_log_records"
 	SigNozSentLogRecordsBytesKey = "singoz_sent_log_records_bytes"
-	SigNozLogsCount              = "signoz_logs_count"
-	SigNozLogsBytes              = "signoz_logs_bytes"
+	SigNozLogsCount              = "siginsight_logs_count"
+	SigNozLogsBytes              = "siginsight_logs_bytes"
 )
 
 var (

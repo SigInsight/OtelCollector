@@ -1,4 +1,4 @@
-type: signoz_tail_sampling
+type: siginsight_tail_sampling
 
 status:
   class: processor

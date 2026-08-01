@@ -30,12 +30,12 @@ import (
 const (
 	hasIsRemoteMask          uint32 = 0x00000100
 	isRemoteMask             uint32 = 0x00000200
-	defaultDatasource        string = "tcp://127.0.0.1:9000/?database=signoz_traces"
-	defaultTraceDatabase     string = "signoz_traces"
-	defaultErrorTable        string = "signoz_error_index_v2"
+	defaultDatasource        string = "tcp://127.0.0.1:9000/?database=siginsight_traces"
+	defaultTraceDatabase     string = "siginsight_traces"
+	defaultErrorTable        string = "error_index_v2"
 	defaultAttributeTableV2  string = "tag_attributes_v2"
 	defaultAttributeKeyTable string = "span_attributes_keys"
-	defaultIndexTableV3      string = "signoz_index_v3"
+	defaultIndexTableV3      string = "span_index_v3"
 	defaultResourceTableV3   string = "traces_v3_resource"
 	insertTraceSQLTemplateV2        = `INSERT INTO %s.%s (
 		ts_bucket_start,

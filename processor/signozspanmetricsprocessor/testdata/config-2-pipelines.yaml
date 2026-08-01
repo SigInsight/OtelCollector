@@ -24,7 +24,7 @@ exporters:
 
 processors:
   batch:
-  signozspanmetrics:
+  siginsightspanmetrics:
     metrics_exporter: debug
     dimensions_cache_size: 500
     metrics_flush_interval: 30s
@@ -34,7 +34,7 @@ service:
       receivers: [otlp/jaeger]
       # spanmetrics will pass on span data untouched to next processor
       # while also accumulating metrics to be sent to the configured 'debug' exporter.
-      processors: [signozspanmetrics, batch]
+      processors: [siginsightspanmetrics, batch]
       exporters: [otlp]
 
     metrics:

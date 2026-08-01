@@ -6,7 +6,7 @@
 # In OpAMP mode (--manager-config + --copy-path) this file is only the bootstrap;
 # the SigInsight backend overrides it at runtime with whatever lives in --copy-path.
 connectors:
-  signozmeter:
+  siginsightmeter:
     metrics_flush_interval: 1h
     dimensions:
       - name: service.name
@@ -44,10 +44,10 @@ processors:
   resourcedetection:
     detectors: [env, system]
     timeout: 2s
-  signozspanmetrics/delta:
+  siginsightspanmetrics/delta:
     aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
     enable_exp_histogram: true
-    metrics_exporter: signozclickhousemetrics
+    metrics_exporter: siginsightclickhousemetrics
     metrics_flush_interval: 60s
     dimensions_cache_size: 100000
     latency_histogram_buckets:
@@ -68,22 +68,22 @@ processors:
 
 exporters:
   clickhousetraces:
-    datasource: tcp://clickhouse:9000/signoz_traces
+    datasource: tcp://clickhouse:9000/siginsight_traces
     use_new_schema: true
     low_cardinal_exception_grouping: false
-  signozclickhousemetrics:
-    dsn: tcp://clickhouse:9000/signoz_metrics
+  siginsightclickhousemetrics:
+    dsn: tcp://clickhouse:9000/siginsight_metrics
   clickhouselogsexporter:
-    dsn: tcp://clickhouse:9000/signoz_logs
+    dsn: tcp://clickhouse:9000/siginsight_logs
     timeout: 10s
     use_new_schema: true
-  signozclickhousemeter:
-    dsn: tcp://clickhouse:9000/signoz_meter
+  siginsightclickhousemeter:
+    dsn: tcp://clickhouse:9000/siginsight_meter
     timeout: 45s
     sending_queue:
       enabled: false
   metadataexporter:
-    dsn: tcp://clickhouse:9000/signoz_metadata
+    dsn: tcp://clickhouse:9000/siginsight_metadata
     timeout: 45s
     enabled: true
     cache:
@@ -103,21 +103,21 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [signozspanmetrics/delta, batch]
-      exporters: [clickhousetraces, metadataexporter, signozmeter]
+      processors: [siginsightspanmetrics/delta, batch]
+      exporters: [clickhousetraces, metadataexporter, siginsightmeter]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+      exporters: [siginsightclickhousemetrics, metadataexporter, siginsightmeter]
     metrics/prometheus:
       receivers: [prometheus]
       processors: [batch]
-      exporters: [signozclickhousemetrics, metadataexporter, signozmeter]
+      exporters: [siginsightclickhousemetrics, metadataexporter, siginsightmeter]
     metrics/meter:
-      receivers: [signozmeter]
+      receivers: [siginsightmeter]
       processors: [batch/meter]
-      exporters: [signozclickhousemeter]
+      exporters: [siginsightclickhousemeter]
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhouselogsexporter, metadataexporter, signozmeter]
+      exporters: [clickhouselogsexporter, metadataexporter, siginsightmeter]

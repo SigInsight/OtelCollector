@@ -1,4 +1,4 @@
-type: signozclickhousemetrics
+type: siginsightclickhousemetrics
 
 status:
   class: exporter

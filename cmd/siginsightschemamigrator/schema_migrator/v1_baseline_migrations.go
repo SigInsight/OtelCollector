@@ -2,6 +2,7 @@ package schemamigrator
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -11,22 +12,22 @@ const V1BaselineMigrationID uint64 = 999
 
 var v1SchemaFingerprints = map[string]SchemaFingerprintExpectation{
 	SigInsightAnalyticsDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 1, TableHash: 573356622719098860, ColumnCount: 11, ColumnHash: 4111144204702223109},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 1, TableHash: 4855574209253441589, ColumnCount: 11, ColumnHash: 4111144204702223109},
 	},
 	SigInsightLogsDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 6, TableHash: 10013745453448773421, ColumnCount: 43, ColumnHash: 15143235747694373747},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 6, TableHash: 15363294312778758214, ColumnCount: 43, ColumnHash: 15143235747694373747},
 	},
 	SigInsightMetadataDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 2, TableHash: 9471719162152962200, ColumnCount: 13, ColumnHash: 11073036235476819325},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 2, TableHash: 10581657663415478266, ColumnCount: 13, ColumnHash: 11073036235476819325},
 	},
 	SigInsightMeterDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 3, TableHash: 5731232586497943347, ColumnCount: 38, ColumnHash: 8743824752276981965},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 3, TableHash: 8304751342954024602, ColumnCount: 38, ColumnHash: 8743824752276981965},
 	},
 	SigInsightMetricsDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 18, TableHash: 4727395258706994518, ColumnCount: 196, ColumnHash: 954080453982615115},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 18, TableHash: 5873844716015653644, ColumnCount: 196, ColumnHash: 954080453982615115},
 	},
 	SigInsightTracesDB: {
-		SchemaFingerprint: SchemaFingerprint{TableCount: 21, TableHash: 15141153314076288482, ColumnCount: 235, ColumnHash: 12795843324237009066},
+		SchemaFingerprint: SchemaFingerprint{TableCount: 21, TableHash: 11791970237666271232, ColumnCount: 235, ColumnHash: 3794638848636739447},
 	},
 }
 
@@ -49,6 +50,22 @@ func v1BaselineOperations(database string) []Operation {
 		// These rows are part of the v1 schema contract even though fingerprints
 		// only cover system.tables and system.columns.
 		operations = append(operations, v1MetadataSeedOperations()...)
+	}
+	return operations
+}
+
+// V1MaterializedViewOperations exposes the current view definitions for the
+// bootstrap name upgrade. Re-running CREATE ... IF NOT EXISTS makes recovery
+// from an interrupted legacy-name migration deterministic.
+func V1MaterializedViewOperations() []Operation {
+	operations := make([]Operation, 0)
+	for _, database := range Databases {
+		for _, operation := range v1BaselineDDLOperations[database] {
+			if strings.HasPrefix(strings.ToUpper(operation.ToSQL()), "CREATE MATERIALIZED VIEW") ||
+				strings.HasPrefix(strings.ToUpper(operation.ToSQL()), "CREATE VIEW") {
+				operations = append(operations, operation)
+			}
+		}
 	}
 	return operations
 }

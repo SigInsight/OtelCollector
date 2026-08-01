@@ -1,4 +1,4 @@
-type: signozlogspipeline
+type: siginsightlogspipeline
 
 status:
   class: processor

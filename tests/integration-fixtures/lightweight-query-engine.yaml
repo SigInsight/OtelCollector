@@ -1,0 +1,52 @@
+# This configuration is intentionally restricted to the data path exercised by
+# SigInsight's lightweight-query-engine integration test. All destinations are
+# supplied by the test runner so the same current Collector binary can run
+# against an isolated ClickHouse 25.5.6 container.
+connectors:
+  siginsightmeter:
+    metrics_flush_interval: 100ms
+    dimensions:
+      - name: service.name
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: ${env:SIGINSIGHT_TEST_OTLP_HTTP_ENDPOINT}
+
+processors:
+  batch:
+    timeout: 100ms
+
+exporters:
+  clickhousetraces:
+    datasource: ${env:SIGINSIGHT_TEST_TRACES_DSN}
+    use_new_schema: true
+  clickhouselogsexporter:
+    dsn: ${env:SIGINSIGHT_TEST_LOGS_DSN}
+    use_new_schema: true
+  siginsightclickhousemetrics:
+    dsn: ${env:SIGINSIGHT_TEST_METRICS_DSN}
+  siginsightclickhousemeter:
+    dsn: ${env:SIGINSIGHT_TEST_METER_DSN}
+  metadataexporter:
+    dsn: ${env:SIGINSIGHT_TEST_METADATA_DSN}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [clickhousetraces, metadataexporter, siginsightmeter]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [siginsightclickhousemetrics, metadataexporter, siginsightmeter]
+    metrics/meter:
+      receivers: [siginsightmeter]
+      processors: [batch]
+      exporters: [siginsightclickhousemeter]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [clickhouselogsexporter, metadataexporter, siginsightmeter]

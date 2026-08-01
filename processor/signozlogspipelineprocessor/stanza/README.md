@@ -1,1 +1,1 @@
-# Copy of stanza components used for powering signozlogspipelineprocessor
+# Copy of stanza components used for powering siginsightlogspipelineprocessor

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	Type      = component.MustNewType("signozclickhousemetrics")
+	Type      = component.MustNewType("siginsightclickhousemetrics")
 	ScopeName = "github.com/SigInsight/OtelCollector/exporter/signozclickhousemetrics"
 )
 

@@ -31,7 +31,7 @@ func Test_loadConfig(t *testing.T) {
 	// From the default configurations -- checks if a correct exporter is instantiated
 	e0 := cfg.Exporters[(component.NewID(metadata.Type))]
 	defaultCfg := factory.CreateDefaultConfig()
-	defaultCfg.(*Config).Datasource = "tcp://127.0.0.1:9000/?database=signoz_traces&username=admin&password=password"
+	defaultCfg.(*Config).Datasource = "tcp://127.0.0.1:9000/?database=siginsight_traces&username=admin&password=password"
 	assert.Equal(t, e0, defaultCfg)
 
 	// checks if the correct Config struct can be instantiated from testdata/config.yaml
@@ -58,7 +58,7 @@ func Test_loadConfig(t *testing.T) {
 			QueueSize:    100,
 			Batch:        expectedBatch,
 		}),
-		Datasource: "tcp://127.0.0.1:9000/?database=signoz_traces&username=admin&password=password",
+		Datasource: "tcp://127.0.0.1:9000/?database=siginsight_traces&username=admin&password=password",
 		AttributesLimits: AttributesLimits{
 			FetchKeysInterval: 10 * time.Minute,
 			MaxDistinctValues: 25000,

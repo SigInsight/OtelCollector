@@ -48,7 +48,7 @@ func createMetricsExporter(ctx context.Context, set exporter.Settings,
 		usage.Options{
 			ReportingInterval: usage.DefaultCollectionInterval,
 		},
-		"signoz_metrics",
+		"siginsight_metrics",
 		UsageExporter,
 		set.Logger,
 	)
@@ -93,7 +93,7 @@ func createDefaultConfig() component.Config {
 		QueueBatchConfig: configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 		DSN:              "tcp://localhost:9000",
 		EnableExpHist:    false,
-		Database:         "signoz_metrics",
+		Database:         "siginsight_metrics",
 		SamplesTable:     "samples_v4",
 		TimeSeriesTable:  "time_series_v4",
 		ExpHistTable:     "exp_hist",

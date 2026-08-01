@@ -1,4 +1,4 @@
-type: signozspanmetrics
+type: siginsightspanmetrics
 
 status:
   class: processor
