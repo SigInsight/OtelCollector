@@ -118,6 +118,7 @@ func TestObsoleteTableCleanupMigrations(t *testing.T) {
 			"distributed_time_series_v4_6hrs", "distributed_updated_metadata", "distributed_usage",
 			"samples_v2", "time_series_v2",
 		}},
+		{SigInsightMetricsDB, 2001, []string{"updated_metadata"}},
 		{SigInsightLogsDB, 2003, []string{
 			"distributed_logs_attribute_keys", "distributed_logs_resource_keys", "distributed_logs_v2",
 			"distributed_logs_v2_resource", "distributed_tag_attributes_v2", "distributed_usage",

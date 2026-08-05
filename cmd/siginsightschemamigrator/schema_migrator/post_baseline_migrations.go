@@ -81,6 +81,15 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 			),
 		},
 	},
+	// Metric metadata is derived from collected time series. The former
+	// operator-managed override table is intentionally discarded.
+	{
+		Database: SigInsightMetricsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems:     dropTables(SigInsightMetricsDB, "updated_metadata"),
+		},
+	},
 	// Logs migration 2001 was previously used to add body_v2, body_promoted,
 	// and their JSON-path metadata. Keep the ID registered so databases that
 	// completed the legacy migration remain valid; 2002 performs the cleanup.

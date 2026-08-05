@@ -84,6 +84,9 @@ assert_baseline_markers() {
 		assert_equal "999:finished" "${marker}" "${database} baseline marker"
 		history_count="$(clickhouse_query "SELECT count() FROM ${database}.schema_migrations_v2 SETTINGS final = 1")"
 		expected_history_count=2
+		if [[ "${database}" == "siginsight_metrics" ]]; then
+			expected_history_count=3
+		fi
 		if [[ "${database}" == "siginsight_logs" ]]; then
 			expected_history_count=4
 		fi
@@ -198,6 +201,7 @@ assert_obsolete_tables_removed() {
 		'siginsight_metrics.distributed_updated_metadata',
 		'siginsight_metrics.distributed_usage',
 		'siginsight_metrics.samples_v2',
+		'siginsight_metrics.updated_metadata',
 		'siginsight_metrics.time_series_v2',
 		'siginsight_traces.distributed_dependency_graph_minutes_v2',
 		'siginsight_traces.distributed_signoz_error_index_v2',
