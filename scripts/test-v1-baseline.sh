@@ -84,8 +84,11 @@ assert_baseline_markers() {
 		assert_equal "999:finished" "${marker}" "${database} baseline marker"
 		history_count="$(clickhouse_query "SELECT count() FROM ${database}.schema_migrations_v2 SETTINGS final = 1")"
 		expected_history_count=2
-		if [[ "${database}" == "siginsight_metrics" ]]; then
+		if [[ "${database}" == "siginsight_traces" || "${database}" == "siginsight_metadata" ]]; then
 			expected_history_count=3
+		fi
+		if [[ "${database}" == "siginsight_metrics" ]]; then
+			expected_history_count=4
 		fi
 		if [[ "${database}" == "siginsight_logs" ]]; then
 			expected_history_count=4
@@ -137,7 +140,7 @@ simulate_pre_siginsight_storage_names() {
 		clickhouse_query "RENAME DATABASE siginsight_${database} TO signoz_${database}"
 	done
 
-	for rename in 'span_index_v3 signoz_index_v3' 'span_index_v2 signoz_index_v2' 'error_index_v2 signoz_error_index_v2' 'legacy_spans signoz_spans'; do
+	for rename in 'span_index_v3 signoz_index_v3' 'error_index_v2 signoz_error_index_v2'; do
 		read -r current legacy <<<"${rename}"
 		if [[ "$(clickhouse_query "EXISTS TABLE signoz_traces.${current}")" == "1" ]]; then
 			clickhouse_query "RENAME TABLE signoz_traces.${current} TO signoz_traces.${legacy}"
@@ -154,9 +157,7 @@ simulate_pre_siginsight_storage_names() {
 		legacy_view_ddl="${legacy_view_ddl//siginsight_analytics/signoz_analytics}"
 		legacy_view_ddl="${legacy_view_ddl//siginsight_meter/signoz_meter}"
 		legacy_view_ddl="${legacy_view_ddl//span_index_v3/signoz_index_v3}"
-		legacy_view_ddl="${legacy_view_ddl//span_index_v2/signoz_index_v2}"
 		legacy_view_ddl="${legacy_view_ddl//error_index_v2/signoz_error_index_v2}"
-		legacy_view_ddl="${legacy_view_ddl//legacy_spans/signoz_spans}"
 		clickhouse_query "DROP TABLE ${view_database}.${view_name}"
 		clickhouse_query "${legacy_view_ddl}"
 	done < <(clickhouse_query "SELECT concat(database, '\t', name) FROM system.tables WHERE database IN ('signoz_logs', 'signoz_metrics', 'signoz_traces', 'signoz_metadata', 'signoz_analytics', 'signoz_meter') AND engine IN ('MaterializedView', 'View') ORDER BY database, name")
@@ -184,6 +185,7 @@ assert_obsolete_tables_removed() {
 		'siginsight_logs.distributed_usage',
 		'siginsight_metadata.distributed_attributes_metadata',
 		'siginsight_metadata.distributed_column_evolution_metadata',
+		'siginsight_metadata.attributes_metadata',
 		'siginsight_metadata.column_evolution_metadata',
 		'siginsight_meter.distributed_samples',
 		'siginsight_meter.distributed_samples_agg_1d',
@@ -216,9 +218,20 @@ assert_obsolete_tables_removed() {
 		'siginsight_traces.distributed_traces_v3_resource',
 		'siginsight_traces.distributed_usage',
 		'siginsight_traces.distributed_usage_explorer',
-		'siginsight_traces.span_attributes'
+		'siginsight_traces.durationSort',
+		'siginsight_traces.legacy_spans',
+		'siginsight_traces.span_attributes',
+		'siginsight_traces.span_index_v2',
+		'siginsight_traces.usage_explorer',
+		'siginsight_traces.usage_explorer_mv'
 	)")"
 	assert_equal "0" "${obsolete_tables}" "obsolete local and distributed tables"
+}
+
+assert_obsolete_columns_removed() {
+	local obsolete_columns
+	obsolete_columns="$(clickhouse_query "SELECT count() FROM system.columns WHERE database = 'siginsight_metrics' AND table IN ('samples_v4', 'time_series_v4') AND name = 'inserted_at_unix_milli'")"
+	assert_equal "0" "${obsolete_columns}" "unused metric ingestion timestamp columns"
 }
 
 assert_core_tables_readable() {
@@ -227,7 +240,6 @@ assert_core_tables_readable() {
 		'siginsight_analytics.rule_state_history_v0',
 		'siginsight_logs.logs_v2',
 		'siginsight_logs.tag_attributes_v2',
-		'siginsight_metadata.attributes_metadata',
 		'siginsight_meter.samples',
 		'siginsight_meter.samples_agg_1d',
 		'siginsight_metrics.exp_hist',
@@ -238,7 +250,7 @@ assert_core_tables_readable() {
 		'siginsight_traces.span_attributes_keys',
 		'siginsight_traces.tag_attributes_v2'
 	)")"
-	assert_equal "13" "${core_table_count}" "Collector and SigInsight core local tables"
+	assert_equal "12" "${core_table_count}" "Collector and SigInsight core local tables"
 
 	clickhouse_query "SELECT timestamp, body, resource FROM siginsight_logs.logs_v2 LIMIT 0" >/dev/null
 	clickhouse_query "SELECT timestamp, trace_id, span_id, resource FROM siginsight_traces.span_index_v3 LIMIT 0" >/dev/null
@@ -279,12 +291,12 @@ JSON
 
 	curl --fail --silent -H 'Content-Type: application/json' \
 		http://127.0.0.1:14318/v1/traces --data-binary @- >/dev/null <<JSON
-{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"schema-smoke"}}]},"scopeSpans":[{"scope":{"name":"schema-smoke"},"spans":[{"traceId":"0123456789abcdef0123456789abcdef","spanId":"0123456789abcdef","name":"schema-smoke-span","kind":2,"startTimeUnixNano":"${now_ns}","endTimeUnixNano":"${end_ns}","status":{"code":1}}]}]}]}
+{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"schema-smoke"}}]},"scopeSpans":[{"scope":{"name":"schema-smoke"},"spans":[{"traceId":"0123456789abcdef0123456789abcdef","spanId":"0123456789abcdef","name":"schema-smoke-span","kind":2,"startTimeUnixNano":"${now_ns}","endTimeUnixNano":"${end_ns}","attributes":[{"key":"smoke.kind","value":{"stringValue":"migration"}}],"status":{"code":1}}]}]}]}
 JSON
 
 	curl --fail --silent -H 'Content-Type: application/json' \
 		http://127.0.0.1:14318/v1/metrics --data-binary @- >/dev/null <<JSON
-{"resourceMetrics":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"schema-smoke"}}]},"scopeMetrics":[{"scope":{"name":"schema-smoke"},"metrics":[{"name":"schema.smoke.gauge","unit":"1","gauge":{"dataPoints":[{"timeUnixNano":"${now_ns}","asDouble":42.5}]}}]}]}]}
+{"resourceMetrics":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"schema-smoke"}}]},"scopeMetrics":[{"scope":{"name":"schema-smoke"},"metrics":[{"name":"schema.smoke.gauge","unit":"1","gauge":{"dataPoints":[{"timeUnixNano":"${now_ns}","asDouble":42.5,"attributes":[{"key":"smoke.kind","value":{"stringValue":"migration"}}]}]}}]}]}]}
 JSON
 
 	smoke_counts=""
@@ -304,6 +316,27 @@ JSON
 		sleep 1
 	done
 	assert_equal "1:1:1:1" "${smoke_counts}" "Collector writes to logs, traces, samples_v4, and time_series_v4"
+
+	local metadata_counts
+	metadata_counts=""
+	for _ in $(seq 1 40); do
+		metadata_counts="$(clickhouse_query "SELECT concat(
+			toString((SELECT count() > 0 FROM siginsight_logs.logs_attribute_keys WHERE name = 'smoke.kind')),
+			':',
+			toString((SELECT count() > 0 FROM siginsight_logs.tag_attributes_v2 WHERE tag_key = 'smoke.kind' AND string_value = 'migration')),
+			':',
+			toString((SELECT count() > 0 FROM siginsight_traces.span_attributes_keys WHERE tagKey = 'smoke.kind')),
+			':',
+			toString((SELECT count() > 0 FROM siginsight_traces.tag_attributes_v2 WHERE tag_key = 'smoke.kind' AND string_value = 'migration')),
+			':',
+			toString((SELECT count() > 0 FROM siginsight_metrics.metadata WHERE metric_name = 'schema.smoke.gauge' AND attr_name = 'smoke.kind'))
+		)")"
+		if [[ "${metadata_counts}" == "1:1:1:1:1" ]]; then
+			break
+		fi
+		sleep 1
+	done
+	assert_equal "1:1:1:1:1" "${metadata_counts}" "signal exporters retain field key/value metadata"
 
 	body_json_value="$(clickhouse_query "SELECT JSON_VALUE(body, '$.service.name') FROM siginsight_logs.logs_v2 WHERE resources_string['service.name'] = 'schema-smoke' LIMIT 1")"
 	assert_equal "api" "${body_json_value}" "Collector-written body String JSON path query"
@@ -366,6 +399,7 @@ assert_baseline_markers
 assert_no_coordination_features
 assert_legacy_logs_json_removed
 assert_obsolete_tables_removed
+assert_obsolete_columns_removed
 assert_core_tables_readable
 assert_collector_writes_reduced_schema
 

@@ -111,6 +111,9 @@ func TestObsoleteTableCleanupMigrations(t *testing.T) {
 			"distributed_trace_summary", "distributed_traces_v3_resource", "distributed_usage",
 			"distributed_usage_explorer", "span_attributes",
 		}},
+		{SigInsightTracesDB, 2001, []string{
+			"usage_explorer_mv", "usage_explorer", "durationSort", "span_index_v2", "legacy_spans",
+		}},
 		{SigInsightMetricsDB, 2000, []string{
 			"distributed_exp_hist", "distributed_metadata", "distributed_samples_v2", "distributed_samples_v4",
 			"distributed_samples_v4_agg_30m", "distributed_samples_v4_agg_5m", "distributed_time_series_v2",
@@ -126,6 +129,7 @@ func TestObsoleteTableCleanupMigrations(t *testing.T) {
 		{SigInsightMetadataDB, 2000, []string{
 			"distributed_attributes_metadata", "distributed_column_evolution_metadata", "column_evolution_metadata",
 		}},
+		{SigInsightMetadataDB, 2001, []string{"attributes_metadata"}},
 		{SigInsightAnalyticsDB, 2000, []string{"distributed_rule_state_history_v0"}},
 		{SigInsightMeterDB, 2000, []string{"distributed_samples", "distributed_samples_agg_1d"}},
 	}
@@ -140,6 +144,20 @@ func TestObsoleteTableCleanupMigrations(t *testing.T) {
 			require.Contains(t, baselineSpecForDatabase(t, tc.database).AllowedMigrationIDs, tc.id)
 		})
 	}
+}
+
+func TestUnusedMetricIngestionTimestampCleanup(t *testing.T) {
+	migration := findPostBaselineMigration(t, SigInsightMetricsDB, 2002)
+	require.Len(t, migration.UpItems, 2)
+	require.Equal(t,
+		"ALTER TABLE siginsight_metrics.samples_v4 DROP COLUMN IF EXISTS inserted_at_unix_milli",
+		migration.UpItems[0].ToSQL(),
+	)
+	require.Equal(t,
+		"ALTER TABLE siginsight_metrics.time_series_v4 DROP COLUMN IF EXISTS inserted_at_unix_milli",
+		migration.UpItems[1].ToSQL(),
+	)
+	require.Contains(t, baselineSpecForDatabase(t, SigInsightMetricsDB).AllowedMigrationIDs, uint64(2002))
 }
 
 func findPostBaselineMigration(t *testing.T, database string, id uint64) SchemaMigrationRecord {

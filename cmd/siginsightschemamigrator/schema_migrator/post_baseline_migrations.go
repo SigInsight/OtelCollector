@@ -58,6 +58,21 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 			),
 		},
 	},
+	// These trace objects belong to the pre-v3 read path. The current trace
+	// exporter and every supported reader use span_index_v3 and its active MVs.
+	{
+		Database: SigInsightTracesDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems: dropTables(SigInsightTracesDB,
+				"usage_explorer_mv",
+				"usage_explorer",
+				"durationSort",
+				"span_index_v2",
+				"legacy_spans",
+			),
+		},
+	},
 	{
 		Database: SigInsightMetricsDB,
 		Migration: SchemaMigrationRecord{
@@ -88,6 +103,18 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 		Migration: SchemaMigrationRecord{
 			MigrationID: 2001,
 			UpItems:     dropTables(SigInsightMetricsDB, "updated_metadata"),
+		},
+	},
+	// Ingestion timestamps were never part of the query, merge, or TTL
+	// contract. Event time remains unix_milli.
+	{
+		Database: SigInsightMetricsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2002,
+			UpItems: []Operation{
+				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "samples_v4", Column: Column{Name: "inserted_at_unix_milli"}},
+				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "time_series_v4", Column: Column{Name: "inserted_at_unix_milli"}},
+			},
 		},
 	},
 	// Logs migration 2001 was previously used to add body_v2, body_promoted,
@@ -141,6 +168,15 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 				"distributed_column_evolution_metadata",
 				"column_evolution_metadata",
 			),
+		},
+	},
+	// Related-value autocomplete is no longer a supported product capability.
+	// Signal-specific key/value tables remain owned by their signal exporters.
+	{
+		Database: SigInsightMetadataDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems:     dropTables(SigInsightMetadataDB, "attributes_metadata"),
 		},
 	},
 	{

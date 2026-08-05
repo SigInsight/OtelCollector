@@ -29,19 +29,16 @@ exporters:
     dsn: ${env:SIGINSIGHT_TEST_METRICS_DSN}
   siginsightclickhousemeter:
     dsn: ${env:SIGINSIGHT_TEST_METER_DSN}
-  metadataexporter:
-    dsn: ${env:SIGINSIGHT_TEST_METADATA_DSN}
-
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhousetraces, metadataexporter, siginsightmeter]
+      exporters: [clickhousetraces, siginsightmeter]
     metrics:
       receivers: [otlp]
       processors: [batch]
-      exporters: [siginsightclickhousemetrics, metadataexporter, siginsightmeter]
+      exporters: [siginsightclickhousemetrics, siginsightmeter]
     metrics/meter:
       receivers: [siginsightmeter]
       processors: [batch]
@@ -49,4 +46,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [clickhouselogsexporter, metadataexporter, siginsightmeter]
+      exporters: [clickhouselogsexporter, siginsightmeter]

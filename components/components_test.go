@@ -27,6 +27,7 @@ func TestDefaultConfigsLoad(t *testing.T) {
 		"../config/collector.yaml",
 		"../config/collector.local.yaml",
 		"../example/example-config.yaml",
+		"../tests/integration-fixtures/lightweight-query-engine.yaml",
 	}
 
 	factories, err := Components()
@@ -63,4 +64,12 @@ func TestKubernetesReceiverFactoriesAreNotRegistered(t *testing.T) {
 		_, found := factories.Receivers[component.MustNewType(receiverType)]
 		require.Falsef(t, found, "receiver %q must not be registered", receiverType)
 	}
+}
+
+func TestRelatedValuesMetadataExporterIsNotRegistered(t *testing.T) {
+	factories, err := Components()
+	require.NoError(t, err)
+
+	_, found := factories.Exporters[component.MustNewType("metadataexporter")]
+	require.False(t, found, "retired related-values exporter must not remain in the binary")
 }

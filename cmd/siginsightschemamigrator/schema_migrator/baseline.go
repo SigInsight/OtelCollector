@@ -180,7 +180,10 @@ func ClassifyBaselineState(spec BaselineSpec, snapshot BaselineSnapshot) Baselin
 		return result
 	}
 
-	if snapshot.DomainTableCount == 0 ||
+	// A finished baseline marker attests that the frozen schema fingerprint was
+	// verified before post-baseline migrations ran. Those migrations may
+	// legitimately remove every domain table from a database.
+	if (!baselineFinished && snapshot.DomainTableCount == 0) ||
 		snapshot.TrackingTableCount != 1 ||
 		len(result.MissingMigrationIDs) > 0 ||
 		len(result.NonFinishedMigrationIDs) > 0 {
