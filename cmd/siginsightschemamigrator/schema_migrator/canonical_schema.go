@@ -113,39 +113,70 @@ var canonicalSchemaRenames = map[string][]canonicalTableRename{
 	},
 }
 
-// canonicalV1DDLOperations derives an immutable post-baseline CREATE contract
-// from the frozen v1 DDL and rewrites every selected view source and target.
-func canonicalV1DDLOperations(database string, renames ...canonicalTableRename) []Operation {
-	ordered := append([]canonicalTableRename(nil), renames...)
+// canonicalBaselineTables are retained from the frozen DDL without a rename.
+// Every other v1 object is obsolete and is deliberately absent from a fresh
+// canonical installation.
+var canonicalBaselineTables = map[string]map[string]struct{}{
+	SigInsightTracesDB: {
+		"span_attributes_keys": {},
+		"trace_summary":        {},
+		"usage":                {},
+	},
+	SigInsightMetricsDB: {
+		"exp_hist": {},
+		"metadata": {},
+		"usage":    {},
+	},
+	SigInsightLogsDB: {
+		"logs_attribute_keys": {},
+		"logs_resource_keys":  {},
+		"usage":               {},
+	},
+}
+
+// canonicalBaselineOperations creates the final, destructive M16 schema in
+// the original DDL dependency order. It intentionally has no legacy creation,
+// copy, rename, or cleanup phase.
+func canonicalBaselineOperations(database string) []Operation {
+	renamed := make(map[string]string, len(canonicalSchemaRenames[database]))
+	for _, rename := range canonicalSchemaRenames[database] {
+		renamed[rename.from] = rename.to
+	}
+
+	ordered := append([]canonicalTableRename(nil), canonicalSchemaRenames[database]...)
 	sort.Slice(ordered, func(i, j int) bool {
 		if len(ordered[i].from) != len(ordered[j].from) {
 			return len(ordered[i].from) > len(ordered[j].from)
 		}
 		return ordered[i].from < ordered[j].from
 	})
-
 	replacements := make([]string, 0, len(ordered)*2)
-	wanted := make(map[string]string, len(ordered))
 	for _, rename := range ordered {
-		wanted[rename.from] = rename.to
 		replacements = append(replacements, database+"."+rename.from, database+"."+rename.to)
 	}
 	replacer := strings.NewReplacer(replacements...)
 
-	operations := make([]Operation, 0, len(renames))
+	active := canonicalBaselineTables[database]
+	operations := make([]Operation, 0, len(renamed)+len(active))
 	for _, rawOperation := range v1BaselineDDLOperations[database] {
 		operation, ok := rawOperation.(StaticDDLOperation)
 		if !ok {
 			panic("frozen v1 DDL contains a non-static operation")
 		}
-		canonicalName, ok := wanted[operation.Table]
-		if !ok {
-			continue
+
+		canonicalName, renamedObject := renamed[operation.Table]
+		if !renamedObject {
+			if _, retained := active[operation.Table]; !retained {
+				continue
+			}
+			canonicalName = operation.Table
 		}
+
 		query := replacer.Replace(operation.Query)
 		if database == SigInsightTracesDB {
 			query = canonicalTraceDDL(query, canonicalName)
 		}
+		query = canonicalMetricDDL(query, database, canonicalName)
 		operations = append(operations, StaticDDLOperation{
 			Database: database,
 			Table:    canonicalName,
@@ -172,31 +203,13 @@ func canonicalTraceDDL(query, table string) string {
 	return query
 }
 
-func canonicalCreateOperations(database string) []Operation {
-	return canonicalV1DDLOperations(database, canonicalSchemaRenames[database]...)
-}
-
-func canonicalLegacyTables(database string) []string {
-	wanted := make(map[string]struct{}, len(canonicalSchemaRenames[database]))
-	for _, rename := range canonicalSchemaRenames[database] {
-		wanted[rename.from] = struct{}{}
+func canonicalMetricDDL(query, database, table string) string {
+	if database != SigInsightMetricsDB || (table != "metric_points" && table != "metric_series") {
+		return query
 	}
-
-	var views []string
-	var tables []string
-	for _, rawOperation := range v1BaselineDDLOperations[database] {
-		operation, ok := rawOperation.(StaticDDLOperation)
-		if !ok {
-			panic("frozen v1 DDL contains a non-static operation")
-		}
-		if _, ok := wanted[operation.Table]; !ok {
-			continue
-		}
-		if strings.HasPrefix(strings.ToUpper(operation.Query), "CREATE MATERIALIZED VIEW") {
-			views = append(views, operation.Table)
-		} else {
-			tables = append(tables, operation.Table)
-		}
+	const insertedAt = ", `inserted_at_unix_milli` Int64 CODEC(ZSTD(1))"
+	if !strings.Contains(query, insertedAt) {
+		panic("frozen metric DDL is missing inserted_at_unix_milli")
 	}
-	return append(views, tables...)
+	return strings.Replace(query, insertedAt, "", 1)
 }

@@ -25,20 +25,6 @@ var (
 	FailedStatus     = "failed"
 )
 
-// LegacyDatabaseRenames is the one-time storage identity upgrade from the
-// former product-prefixed telemetry databases. Keep these literals only here:
-// bootstrap uses them to adopt existing installations without copying data.
-func LegacyDatabaseRenames() map[string]string {
-	return map[string]string{
-		"signoz_logs":      SigInsightLogsDB,
-		"signoz_metrics":   SigInsightMetricsDB,
-		"signoz_traces":    SigInsightTracesDB,
-		"signoz_metadata":  SigInsightMetadataDB,
-		"signoz_analytics": SigInsightAnalyticsDB,
-		"signoz_meter":     SigInsightMeterDB,
-	}
-}
-
 type SchemaMigrationRecord struct {
 	MigrationID uint64
 	UpItems     []Operation
@@ -77,43 +63,6 @@ func WithLogger(logger *zap.Logger) Option {
 	return func(mgr *MigrationManager) {
 		mgr.logger = logger
 	}
-}
-
-func (m *MigrationManager) shouldRunMigration(db string, migrationID uint64, versions []uint64) bool {
-	m.logger.Info("Checking if migration should run", zap.String("db", db), zap.Uint64("migration_id", migrationID), zap.Any("versions", versions))
-	// if versions are provided, we only run the migrations that are in the versions slice
-	if len(versions) != 0 {
-		var doesExist bool
-		for _, version := range versions {
-			if migrationID == version {
-				doesExist = true
-				break
-			}
-		}
-		if !doesExist {
-			m.logger.Info("Migration should not run as it is not in the provided versions", zap.Uint64("migration_id", migrationID), zap.Any("versions", versions))
-			return false
-		}
-	}
-
-	query := fmt.Sprintf("SELECT * FROM %s.schema_migrations_v2 WHERE migration_id = %d SETTINGS final = 1;", db, migrationID)
-	m.logger.Info("Fetching migration status", zap.String("query", query))
-	var migrationSchemaMigrationRecord MigrationSchemaMigrationRecord
-	if err := m.conn.QueryRow(context.Background(), query).ScanStruct(&migrationSchemaMigrationRecord); err != nil {
-		if err == sql.ErrNoRows {
-			m.logger.Info("Migration not run", zap.Uint64("migration_id", migrationID))
-			return true
-		}
-		// this should not happen
-		m.logger.Error("Failed to fetch migration status", zap.Error(err))
-		panic(err)
-	}
-	m.logger.Info("Migration status", zap.Uint64("migration_id", migrationID), zap.String("status", migrationSchemaMigrationRecord.Status))
-	if migrationSchemaMigrationRecord.Status != InProgressStatus && migrationSchemaMigrationRecord.Status != FinishedStatus {
-		m.logger.Info("Migration not run", zap.Uint64("migration_id", migrationID), zap.String("status", migrationSchemaMigrationRecord.Status))
-		return true
-	}
-	return false
 }
 
 func (m *MigrationManager) IsSync(migration SchemaMigrationRecord) bool {

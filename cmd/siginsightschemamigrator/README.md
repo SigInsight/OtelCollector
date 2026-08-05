@@ -102,6 +102,16 @@ selectors or a `--dev` flag; each subcommand applies all of the migrations it ow
 and records progress in the `schema_migrations_v2` tracking table so reruns are
 idempotent.
 
+## Canonical baseline
+
+Collector v2.0.0 installs the canonical schema directly. On an empty
+ClickHouse instance, `migrate sync up` creates only the final unversioned
+business tables and Materialized Views, verifies their table/column
+fingerprints, then records migration marker `999`. It does not create legacy
+tables, copy data, rename tables, or run a later cleanup phase. This is a
+destructive release boundary: existing telemetry databases must be discarded
+and recreated before deploying v2.0.0.
+
 ### Supported subcommands
 
 - `migrate bootstrap`
