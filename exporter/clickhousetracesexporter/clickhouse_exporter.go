@@ -32,12 +32,12 @@ const (
 	isRemoteMask             uint32 = 0x00000200
 	defaultDatasource        string = "tcp://127.0.0.1:9000/?database=siginsight_traces"
 	defaultTraceDatabase     string = "siginsight_traces"
-	defaultErrorTable        string = "error_index_v2"
-	defaultAttributeTableV2  string = "tag_attributes_v2"
+	defaultExceptionsTable   string = "exceptions"
+	defaultFieldValuesTable  string = "field_values"
 	defaultAttributeKeyTable string = "span_attributes_keys"
-	defaultIndexTableV3      string = "span_index_v3"
-	defaultResourceTableV3   string = "traces_v3_resource"
-	insertTraceSQLTemplateV2        = `INSERT INTO %s.%s (
+	defaultSpansTable        string = "spans"
+	defaultResourceSetsTable string = "resource_sets"
+	insertSpansSQLTemplate          = `INSERT INTO %s.%s (
 		ts_bucket_start,
 		resource_fingerprint,
 		timestamp,

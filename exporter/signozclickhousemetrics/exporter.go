@@ -74,8 +74,7 @@ type clickhouseMetricsExporter struct {
 	closeChan chan struct{}
 }
 
-// sample represents a single metric sample
-// directly mapped to the table `samples_v4` schema
+// sample represents one row in the `metric_points` table.
 type sample struct {
 	env         string
 	temporality pmetric.AggregationTemporality
@@ -103,7 +102,7 @@ type exponentialHistogramSample struct {
 }
 
 // ts represents a single time series
-// directly mapped to the table `time_series_v4` schema
+// timeSeries is directly mapped to the `metric_series` schema.
 type ts struct {
 	env           string
 	temporality   pmetric.AggregationTemporality

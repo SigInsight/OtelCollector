@@ -50,13 +50,12 @@ import (
 )
 
 const (
-	distributedTagAttributesV2       = "tag_attributes_v2"
-	distributedLogsTableV2           = "logs_v2"
-	logsTableV2                      = "logs_v2"
-	distributedLogsResourceV2        = "logs_v2_resource"
-	distributedLogsAttributeKeys     = "logs_attribute_keys"
-	distributedLogsResourceKeys      = "logs_resource_keys"
-	distributedLogsResourceV2Seconds = 1800
+	fieldValuesTable         = "field_values"
+	logsTable                = "logs"
+	logsResourceTable        = "resource_sets"
+	logsAttributeKeysTable   = "logs_attribute_keys"
+	logsResourceKeysTable    = "logs_resource_keys"
+	logsResourceCacheSeconds = 1800
 	// language=ClickHouse SQL
 	insertLogsResourceSQLTemplate = `INSERT INTO %s.%s (
 		labels,
@@ -67,7 +66,7 @@ const (
 			?,
 			?
 	)`
-	insertLogsSQLTemplateV2 = `INSERT INTO %s.%s (
+	insertLogsSQLTemplate = `INSERT INTO %s.%s (
 		ts_bucket_start,
 		resource_fingerprint,
 		timestamp,
@@ -296,7 +295,7 @@ func (e *clickhouseLogsExporter) doFetchShouldSkipKeys() {
 		WHERE unix_milli >= (toUnixTimestamp(now() - toIntervalHour(6)) * 1000)
 		GROUP BY tag_key, tag_type, tag_data_type
 		HAVING string_count > %d OR number_count > %d
-		SETTINGS max_threads = 2`, databaseName, distributedTagAttributesV2, e.maxDistinctValues, e.maxDistinctValues)
+		SETTINGS max_threads = 2`, databaseName, fieldValuesTable, e.maxDistinctValues, e.maxDistinctValues)
 
 	e.logger.Debug("fetching should skip keys", zap.String("query", query))
 
@@ -421,7 +420,7 @@ func (e *clickhouseLogsExporter) pushToClickhouse(ctx context.Context, ld plog.L
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value)",
 			databaseName,
-			distributedTagAttributesV2,
+			fieldValuesTable,
 		),
 		driver.WithReleaseConnection(),
 	)
@@ -435,7 +434,7 @@ func (e *clickhouseLogsExporter) pushToClickhouse(ctx context.Context, ld plog.L
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (name, datatype)",
 			databaseName,
-			distributedLogsAttributeKeys,
+			logsAttributeKeysTable,
 		),
 		driver.WithReleaseConnection(),
 	)
@@ -449,7 +448,7 @@ func (e *clickhouseLogsExporter) pushToClickhouse(ctx context.Context, ld plog.L
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (name, datatype)",
 			databaseName,
-			distributedLogsResourceKeys,
+			logsResourceKeysTable,
 		),
 		driver.WithReleaseConnection(),
 	)
@@ -601,7 +600,7 @@ producerIteration:
 						return fmt.Errorf("IdGenError:%w", err)
 					}
 
-					lBucketStart := tsBucket(int64(ts/1000000000), distributedLogsResourceV2Seconds)
+					lBucketStart := tsBucket(int64(ts/1000000000), logsResourceCacheSeconds)
 
 					// fingerprint for resourceJson
 					fp := resourcesSeen.getOrCreateFingerprint(
@@ -694,11 +693,11 @@ producerIteration:
 	chDuration := make(chan statementSendDuration, chLen)
 
 	wg.Add(chLen)
-	go send(insertLogsStmtV2, distributedLogsTableV2, chDuration, chErr, &wg)
-	go send(insertResourcesStmtV2, distributedLogsResourceV2, chDuration, chErr, &wg)
-	go send(attributeKeysStmt, distributedLogsAttributeKeys, chDuration, chErr, &wg)
-	go send(resourceKeysStmt, distributedLogsResourceKeys, chDuration, chErr, &wg)
-	go send(tagStatementV2, distributedTagAttributesV2, chDuration, chErr, &wg)
+	go send(insertLogsStmtV2, logsTable, chDuration, chErr, &wg)
+	go send(insertResourcesStmtV2, logsResourceTable, chDuration, chErr, &wg)
+	go send(attributeKeysStmt, logsAttributeKeysTable, chDuration, chErr, &wg)
+	go send(resourceKeysStmt, logsResourceKeysTable, chDuration, chErr, &wg)
+	go send(tagStatementV2, fieldValuesTable, chDuration, chErr, &wg)
 	wg.Wait()
 	close(chErr)
 
@@ -931,9 +930,9 @@ func newClickhouseClient(_ *zap.Logger, cfg *Config) (clickhouse.Conn, error) {
 }
 
 func renderInsertLogsSQLV2() string {
-	return fmt.Sprintf(insertLogsSQLTemplateV2, databaseName, distributedLogsTableV2)
+	return fmt.Sprintf(insertLogsSQLTemplate, databaseName, logsTable)
 }
 
 func renderInsertLogsResourceSQL(_ *Config) string {
-	return fmt.Sprintf(insertLogsResourceSQLTemplate, databaseName, distributedLogsResourceV2)
+	return fmt.Sprintf(insertLogsResourceSQLTemplate, databaseName, logsResourceTable)
 }

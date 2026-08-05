@@ -29,12 +29,51 @@ type PostBaselineMigration struct {
 //			UpItems: []Operation{AlterTableAddColumn{...}},
 //		},
 //	}
-var PostBaselineSyncMigrations = []PostBaselineMigration{}
+var PostBaselineSyncMigrations = []PostBaselineMigration{
+	{
+		Database: SigInsightTracesDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2002,
+			UpItems:     canonicalCreateOperations(SigInsightTracesDB),
+		},
+	},
+	{
+		Database: SigInsightMetricsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2003,
+			UpItems:     canonicalCreateOperations(SigInsightMetricsDB),
+		},
+	},
+	// Create the canonical logs storage before the collector and SigInsight
+	// switch readers/writers. Old data is intentionally not copied.
+	{
+		Database: SigInsightLogsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2004,
+			UpItems:     canonicalCreateOperations(SigInsightLogsDB),
+		},
+	},
+	{
+		Database: SigInsightAnalyticsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems:     canonicalCreateOperations(SigInsightAnalyticsDB),
+		},
+	},
+	{
+		Database: SigInsightMeterDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2001,
+			UpItems:     canonicalCreateOperations(SigInsightMeterDB),
+		},
+	},
+}
 
 // PostBaselineAsyncMigrations is the extension point for mutations and other
 // work that must run after the synchronous release upgrade. Do not mix sync and
-// async operations in one migration; use consecutive IDs and make the sync
-// migration the lower ID when both are introduced in the same release.
+// async operations in one migration. A cleanup migration must have a greater ID
+// than the sync migration that creates its replacement; older async migrations
+// do not prevent a later release from adding a higher-ID sync migration.
 var PostBaselineAsyncMigrations = []PostBaselineMigration{
 	{
 		Database: SigInsightTracesDB,
@@ -96,6 +135,13 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 			),
 		},
 	},
+	{
+		Database: SigInsightTracesDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2003,
+			UpItems:     dropTables(SigInsightTracesDB, canonicalLegacyTables(SigInsightTracesDB)...),
+		},
+	},
 	// Metric metadata is derived from collected time series. The former
 	// operator-managed override table is intentionally discarded.
 	{
@@ -115,6 +161,16 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "samples_v4", Column: Column{Name: "inserted_at_unix_milli"}},
 				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "time_series_v4", Column: Column{Name: "inserted_at_unix_milli"}},
 			},
+		},
+	},
+	{
+		Database: SigInsightMetricsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2004,
+			UpItems: append([]Operation{
+				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "metric_points", Column: Column{Name: "inserted_at_unix_milli"}},
+				AlterTableDropColumn{Database: SigInsightMetricsDB, Table: "metric_series", Column: Column{Name: "inserted_at_unix_milli"}},
+			}, dropTables(SigInsightMetricsDB, canonicalLegacyTables(SigInsightMetricsDB)...)...),
 		},
 	},
 	// Logs migration 2001 was previously used to add body_v2, body_promoted,
@@ -159,6 +215,19 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 			),
 		},
 	},
+	// The canonical tables were created by sync migration 2004. Removing the
+	// versioned tables is deliberately separate so no legacy data is copied.
+	{
+		Database: SigInsightLogsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2005,
+			UpItems: dropTables(SigInsightLogsDB,
+				"logs_v2",
+				"logs_v2_resource",
+				"tag_attributes_v2",
+			),
+		},
+	},
 	{
 		Database: SigInsightMetadataDB,
 		Migration: SchemaMigrationRecord{
@@ -189,6 +258,13 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 		},
 	},
 	{
+		Database: SigInsightAnalyticsDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2002,
+			UpItems:     dropTables(SigInsightAnalyticsDB, canonicalLegacyTables(SigInsightAnalyticsDB)...),
+		},
+	},
+	{
 		Database: SigInsightMeterDB,
 		Migration: SchemaMigrationRecord{
 			MigrationID: 2000,
@@ -196,6 +272,13 @@ var PostBaselineAsyncMigrations = []PostBaselineMigration{
 				"distributed_samples",
 				"distributed_samples_agg_1d",
 			),
+		},
+	},
+	{
+		Database: SigInsightMeterDB,
+		Migration: SchemaMigrationRecord{
+			MigrationID: 2002,
+			UpItems:     dropTables(SigInsightMeterDB, canonicalLegacyTables(SigInsightMeterDB)...),
 		},
 	},
 }

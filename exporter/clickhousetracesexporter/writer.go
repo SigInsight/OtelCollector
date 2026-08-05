@@ -56,14 +56,14 @@ type SpanWriter struct {
 	logger            *zap.Logger
 	db                clickhouse.Conn
 	traceDatabase     string
-	errorTable        string
-	attributeTableV2  string
+	exceptionsTable   string
+	fieldValuesTable  string
 	attributeKeyTable string
 	exporterId        uuid.UUID
 	durationHistogram metric.Float64Histogram
 
-	indexTableV3    string
-	resourceTableV3 string
+	spansTable        string
+	resourceSetsTable string
 
 	keysCache *ttlcache.Cache[string, struct{}]
 	rfCache   *ttlcache.Cache[string, struct{}]
@@ -80,11 +80,11 @@ func NewSpanWriter(options ...WriterOption) *SpanWriter {
 
 	writer := &SpanWriter{
 		traceDatabase:     defaultTraceDatabase,
-		errorTable:        defaultErrorTable,
-		attributeTableV2:  defaultAttributeTableV2,
+		exceptionsTable:   defaultExceptionsTable,
+		fieldValuesTable:  defaultFieldValuesTable,
 		attributeKeyTable: defaultAttributeKeyTable,
-		indexTableV3:      defaultIndexTableV3,
-		resourceTableV3:   defaultResourceTableV3,
+		spansTable:        defaultSpansTable,
+		resourceSetsTable: defaultResourceSetsTable,
 		done:              make(chan struct{}),
 	}
 	for _, option := range options {
@@ -108,7 +108,7 @@ func (e *SpanWriter) doFetchShouldSkipKeys() {
 		WHERE unix_milli >= (toUnixTimestamp(now() - toIntervalHour(6)) * 1000)
 		GROUP BY tag_key, tag_type, tag_data_type
 		HAVING string_count > %d OR number_count > %d
-		SETTINGS max_threads = 2`, e.traceDatabase, e.attributeTableV2, e.maxDistinctValues, e.maxDistinctValues)
+		SETTINGS max_threads = 2`, e.traceDatabase, e.fieldValuesTable, e.maxDistinctValues, e.maxDistinctValues)
 
 	e.logger.Info("fetching should skip keys", zap.String("query", query))
 
@@ -148,7 +148,7 @@ func (w *SpanWriter) writeIndexBatchV3(ctx context.Context, batchSpans []*SpanV3
 			_ = statement.Abort()
 		}
 	}()
-	statement, err = w.db.PrepareBatch(ctx, fmt.Sprintf(insertTraceSQLTemplateV2, w.traceDatabase, w.indexTableV3), driver.WithReleaseConnection())
+	statement, err = w.db.PrepareBatch(ctx, fmt.Sprintf(insertSpansSQLTemplate, w.traceDatabase, w.spansTable), driver.WithReleaseConnection())
 	if err != nil {
 		return fmt.Errorf("could not prepare batch for index table: %w", err)
 	}
@@ -210,7 +210,7 @@ func (w *SpanWriter) writeIndexBatchV3(ctx context.Context, batchSpans []*SpanV3
 		float64(time.Since(start).Milliseconds()),
 		metric.WithAttributes(
 			attribute.String("exporter", pipeline.SignalTraces.String()),
-			attribute.String("table", w.indexTableV3),
+			attribute.String("table", w.spansTable),
 		),
 	)
 	return err
@@ -230,7 +230,7 @@ func (w *SpanWriter) writeErrorBatchV3(ctx context.Context, batchSpans []*SpanV3
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (timestamp, errorID, groupID, traceID, spanID, serviceName, exceptionType, exceptionMessage, exceptionStacktrace, exceptionEscaped, resourceTagsMap)",
 			w.traceDatabase,
-			w.errorTable,
+			w.exceptionsTable,
 		),
 		driver.WithReleaseConnection(),
 	)
@@ -272,7 +272,7 @@ func (w *SpanWriter) writeErrorBatchV3(ctx context.Context, batchSpans []*SpanV3
 		float64(time.Since(start).Milliseconds()),
 		metric.WithAttributes(
 			attribute.String("exporter", pipeline.SignalTraces.String()),
-			attribute.String("table", w.errorTable),
+			attribute.String("table", w.exceptionsTable),
 		),
 	)
 	return err
@@ -280,7 +280,7 @@ func (w *SpanWriter) writeErrorBatchV3(ctx context.Context, batchSpans []*SpanV3
 
 func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) error {
 	var tagKeyStatement driver.Batch
-	var tagStatementV2 driver.Batch
+	var fieldValuesStatement driver.Batch
 	var err error
 	var shouldSkipKeys map[string]shouldSkipKey
 
@@ -302,19 +302,19 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 	}
 	defer tagKeyStatement.Close()
 
-	tagStatementV2, err = w.db.PrepareBatch(
+	fieldValuesStatement, err = w.db.PrepareBatch(
 		ctx,
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value)",
 			w.traceDatabase,
-			w.attributeTableV2,
+			w.fieldValuesTable,
 		),
 		driver.WithReleaseConnection(),
 	)
 	if err != nil {
-		return fmt.Errorf("could not prepare batch for span attributes table v2 due to error: %w", err)
+		return fmt.Errorf("could not prepare batch for field values table due to error: %w", err)
 	}
-	defer tagStatementV2.Close()
+	defer fieldValuesStatement.Close()
 
 	// create map of span attributes of key, tagType, dataType and isColumn to avoid duplicates in batch
 	mapOfSpanAttributeKeys := make(map[string]struct{})
@@ -374,7 +374,7 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 
 				if _, ok := shouldSkipKeys[v2Key]; !ok {
 					// TODO: handle error
-					_ = tagStatementV2.Append(
+					_ = fieldValuesStatement.Append(
 						unixMilli,
 						spanAttribute.Key,
 						spanAttribute.TagType,
@@ -387,7 +387,7 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 			} else if spanAttribute.DataType == "float64" {
 				if _, ok = shouldSkipKeys[v2Key]; !ok {
 					// TODO: handle error
-					_ = tagStatementV2.Append(
+					_ = fieldValuesStatement.Append(
 						unixMilli,
 						spanAttribute.Key,
 						spanAttribute.TagType,
@@ -399,7 +399,7 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 			} else if spanAttribute.DataType == "bool" {
 				if _, ok = shouldSkipKeys[v2Key]; !ok {
 					// TODO: handle erroe
-					_ = tagStatementV2.Append(
+					_ = fieldValuesStatement.Append(
 						unixMilli,
 						spanAttribute.Key,
 						spanAttribute.TagType,
@@ -419,34 +419,34 @@ func (w *SpanWriter) writeTagBatchV3(ctx context.Context, batchSpans []*SpanV3) 
 		if _, ok := mapOfSpanFields[span.Name]; !ok {
 			mapOfSpanFields[span.Name] = struct{}{}
 			// TODO: handle error
-			_ = tagStatementV2.Append(unixMilli, "name", utils.TagTypeSpanField, utils.TagDataTypeString, span.Name, nil)
+			_ = fieldValuesStatement.Append(unixMilli, "name", utils.TagTypeSpanField, utils.TagDataTypeString, span.Name, nil)
 		}
 		if _, ok := mapOfSpanFields[span.SpanKind]; !ok {
 			mapOfSpanFields[span.SpanKind] = struct{}{}
 			// TODO: handle error
-			_ = tagStatementV2.Append(unixMilli, "kind_string", utils.TagTypeSpanField, utils.TagDataTypeString, span.SpanKind, nil)
-			_ = tagStatementV2.Append(unixMilli, "kind", utils.TagTypeSpanField, utils.TagDataTypeNumber, nil, float64(span.Kind))
+			_ = fieldValuesStatement.Append(unixMilli, "kind_string", utils.TagTypeSpanField, utils.TagDataTypeString, span.SpanKind, nil)
+			_ = fieldValuesStatement.Append(unixMilli, "kind", utils.TagTypeSpanField, utils.TagDataTypeNumber, nil, float64(span.Kind))
 		}
 		if _, ok := mapOfSpanFields[span.StatusCodeString]; !ok {
 			mapOfSpanFields[span.StatusCodeString] = struct{}{}
 			// TODO: handle error
-			_ = tagStatementV2.Append(unixMilli, "status_code_string", utils.TagTypeSpanField, utils.TagDataTypeString, span.StatusCodeString, nil)
-			_ = tagStatementV2.Append(unixMilli, "status_code", utils.TagTypeSpanField, utils.TagDataTypeNumber, nil, float64(span.StatusCode))
+			_ = fieldValuesStatement.Append(unixMilli, "status_code_string", utils.TagTypeSpanField, utils.TagDataTypeString, span.StatusCodeString, nil)
+			_ = fieldValuesStatement.Append(unixMilli, "status_code", utils.TagTypeSpanField, utils.TagDataTypeNumber, nil, float64(span.StatusCode))
 		}
 	}
 
 	tagStart := time.Now()
-	err = tagStatementV2.Send()
+	err = fieldValuesStatement.Send()
 	w.durationHistogram.Record(
 		ctx,
 		float64(time.Since(tagStart).Milliseconds()),
 		metric.WithAttributes(
 			attribute.String("exporter", pipeline.SignalTraces.String()),
-			attribute.String("table", w.attributeTableV2),
+			attribute.String("table", w.fieldValuesTable),
 		),
 	)
 	if err != nil {
-		return fmt.Errorf("could not write to span attributes table due to error: %w", err)
+		return fmt.Errorf("could not write to field values table due to error: %w", err)
 	}
 
 	tagKeyStart := time.Now()
@@ -535,7 +535,7 @@ func (w *SpanWriter) WriteResourcesV3(ctx context.Context, resourcesSeen map[int
 		fmt.Sprintf(
 			"INSERT INTO %s.%s (labels, fingerprint, seen_at_ts_bucket_start)",
 			w.traceDatabase,
-			w.resourceTableV3,
+			w.resourceSetsTable,
 		),
 		driver.WithReleaseConnection(),
 	)
@@ -572,7 +572,7 @@ func (w *SpanWriter) WriteResourcesV3(ctx context.Context, resourcesSeen map[int
 		float64(time.Since(start).Milliseconds()),
 		metric.WithAttributes(
 			attribute.String("exporter", pipeline.SignalTraces.String()),
-			attribute.String("table", w.resourceTableV3),
+			attribute.String("table", w.resourceSetsTable),
 		),
 	)
 	return nil

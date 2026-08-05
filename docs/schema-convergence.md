@@ -1,6 +1,6 @@
 # SigInsight ClickHouse Schema 收敛：Collector 审核结论
 
-状态：S1 Implemented（Collector 已实现并通过 ClickHouse 25.5.6 验证）
+状态：S2 Implemented（Collector canonical schema 已实现并通过 ClickHouse 25.5.6 验证）
 日期：2026-08-05
 ClickHouse：`clickhouse/clickhouse-server:25.5.6`
 
@@ -68,23 +68,61 @@ S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint �
 `exp_hist.inserted_at_unix_milli` 未在 S1 删除，因为 exponential histogram 仍是第二批
 能力候选，不能把其写入契约与普通 Gauge/Sum/Histogram 一并改变。
 
+## S2 canonical schema
+
+S2 不使用 `RENAME TABLE`。ClickHouse 25.5.6 实测表明，重命名 source/target
+不会重写 Materialized View 的定义；后续向新表名写入时，旧 MV 链不会被触发。
+因此 sync migration 从冻结 v1 DDL 派生并创建空 canonical 表和重写后的 MV，
+Collector/SigInsight 在停服发布窗口一起切换，async migration 最后删除旧对象。
+旧数据不复制、不回填，也没有双写或运行时 fallback。
+
+Trace `spans` 同时删除所有 camelCase `ALIAS`，并将 `resource_string_service$$name`
+等物化快速路径改为 `service_name`、`http_route`、`db_system`、`rpc_method`
+及对应的 `*_present`。重写覆盖 `spans` 的 skip index 和所有 Trace MV 的
+source 引用；旧 SQL 不再有 alias 回退通道。
+
+| Database | 旧对象 | Canonical 对象 |
+| --- | --- | --- |
+| Analytics | `rule_state_history_v0` | `rule_state_history` |
+| Logs | `logs_v2`、`logs_v2_resource`、`tag_attributes_v2` | `logs`、`resource_sets`、`field_values` |
+| Traces | `span_index_v3`、`traces_v3_resource`、`tag_attributes_v2`、`error_index_v2` | `spans`、`resource_sets`、`field_values`、`exceptions` |
+| Traces derived | `top_level_operations`、`root_operations`、`sub_root_operations`、`trace_summary_mv` | `operations`、`root_operations_mv`、`sub_root_operations_mv`、`trace_summary_from_spans_mv` |
+| Service Map | `dependency_graph_minutes_v2` 及三个 `_v2` MV | `service_edges` 及三个 `service_edges_*_mv` |
+| Metrics points | `samples_v4`、`samples_v4_agg_5m/30m` 及 MV | `metric_points`、`metric_rollup_5m/30m` 及 MV |
+| Metrics series | `time_series_v4`、`time_series_v4_6hrs/1day/1week` 及 MV | `metric_series`、`metric_series_6h/1d/1w` 及 MV |
+| Meter | `samples`、`samples_agg_1d` 及 MV | `meter_points`、`meter_rollup_1d` 及 MV |
+
+### S2 migration IDs
+
+| Database | Sync create | Async cleanup |
+| --- | --- | --- |
+| `siginsight_traces` | `2002` | `2003` |
+| `siginsight_metrics` | `2003` | `2004` |
+| `siginsight_logs` | `2004` | `2005` |
+| `siginsight_analytics` | `2001` | `2002` |
+| `siginsight_meter` | `2001` | `2002` |
+
+Sync migration 只依赖同库更早的 sync migration。Async migration 依赖同库所有 ID
+更小的 sync/async migration。该规则允许后续发布增加高 ID sync migration，而不会被
+先前发布的低 ID async cleanup 错误阻塞，同时保证删除旧表前 canonical 表已创建。
+
 ## 必须保留的生产写入链
 
 | 能力 | Source | Target/consumer |
 | --- | --- | --- |
-| Trace 查询 | trace exporter | `span_index_v3` |
-| Trace resource filter | trace exporter | `traces_v3_resource` |
-| Trace field autocomplete | trace exporter | `span_attributes_keys`、`tag_attributes_v2` |
-| Services operations | `span_index_v3` | `root_operations`、`sub_root_operations` -> `top_level_operations` |
-| Trace Detail summary | `span_index_v3` | `trace_summary_mv` -> `trace_summary` |
-| Service Map | `span_index_v3` | 3 个 dependency graph MVs -> `dependency_graph_minutes_v2` |
-| Exceptions | trace exporter | `error_index_v2` |
-| Logs 查询/resource filter | logs exporter | `logs_v2`、`logs_v2_resource` |
-| Logs autocomplete | logs exporter | keys tables、`tag_attributes_v2` |
-| Metrics | metrics exporter | `samples_v4`、`time_series_v4`、rollups、`metadata` |
-| Meter | meter exporter | `samples`、`samples_agg_1d_mv` -> `samples_agg_1d` |
+| Trace 查询 | trace exporter | `spans` |
+| Trace resource filter | trace exporter | `resource_sets` |
+| Trace field autocomplete | trace exporter | `span_attributes_keys`、`field_values` |
+| Services operations | `spans` | `root_operations_mv`、`sub_root_operations_mv` -> `operations` |
+| Trace Detail summary | `spans` | `trace_summary_from_spans_mv` -> `trace_summary` |
+| Service Map | `spans` | 3 个 `service_edges_*_mv` -> `service_edges` |
+| Exceptions | trace exporter | `exceptions` |
+| Logs 查询/resource filter | logs exporter | `logs`、`resource_sets` |
+| Logs autocomplete | logs exporter | keys tables、`field_values` |
+| Metrics | metrics exporter | `metric_points`、`metric_series`、rollups、`metadata` |
+| Meter | meter exporter | `meter_points`、`meter_rollup_1d_mv` -> `meter_rollup_1d` |
 
-`root_operations` 和 `sub_root_operations` 是当前生产 MV，不是 legacy 对象。删除其中任一项都会使 Services operation 列表随时间失真。
+`root_operations_mv` 和 `sub_root_operations_mv` 是当前生产 MV。删除其中任一项都会使 Services operation 列表随时间失真。
 
 ## 第二批候选
 
@@ -107,13 +145,29 @@ S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint �
 
 ## 发布顺序
 
-1. 先在现有 schema 上实施死对象清理，验证现有 UI/API 不变。
-2. 停止 SigInsight 和 Collector。
-3. 在空 canonical 表上创建 DDL，不复制旧数据。
-4. 同一发布单元切换 Collector INSERT、MVs 和 SigInsight reader/Catalog。
-5. schema readiness 通过后启动服务并写入真实 OTLP fixtures。
-6. 执行 Logs、Traces、Metrics Explorer、Service Map、Exceptions、Alert、Retention 和 Meter 验证。
-7. 删除旧 versioned 对象；不保留运行时 fallback。
+1. 停止 SigInsight 和 Collector，阻止旧 writer 在切换窗口继续写入。
+2. 执行 sync migration，创建空 canonical 表及完整 MV 链；不复制旧数据。
+3. 部署同一发布单元中的新 Collector writer 与 SigInsight reader/Catalog。
+4. schema readiness 通过后启动服务并写入真实 OTLP fixtures。
+5. 执行 Logs、Traces、Metrics Explorer、Service Map、Exceptions、Alert、Retention 和 Meter 验证。
+6. 执行 async migration 删除旧 versioned 对象；不保留运行时 fallback。
+
+不能在旧 SigInsight reader 仍运行时执行 async cleanup，也不能让新 Collector writer 在
+sync migration 前启动。部署编排必须把这两条作为硬性前置条件。
+
+### SigInsight reader/Catalog 同步清单
+
+SigInsight 必须在同一发布单元更新下列引用：
+
+- Logs reader、字段 catalog、retention：`logs`、`resource_sets`、`field_values`；
+- Traces/Trace Detail/Exceptions/Service Map：`spans`、`resource_sets`、`field_values`、
+  `exceptions`、`operations`、`trace_summary`、`service_edges`；
+- Metrics compiler、metadata/explorer、retention：`metric_points`、`metric_series`、
+  `metric_rollup_5m`、`metric_rollup_30m`、`metric_series_6h/1d/1w`、`metadata`；
+- Rule history 与 Meter：`rule_state_history`、`meter_points`、`meter_rollup_1d`。
+
+配置、SQL fixture 和 schema catalog 中不得继续引用旧 versioned 名称。冻结 migration DDL、
+bootstrap 旧安装识别及 denylist 测试中的旧名称不属于运行时引用。
 
 ## Collector 测试门槛
 
@@ -126,20 +180,18 @@ S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint �
 7. TTL、partition、skip index、resource fingerprint；
 8. 缺失表/列时 schema readiness 返回明确错误。
 
-## S1 验证记录
+## 验证记录
 
-2026-08-05 已通过：
+2026-08-05 S1、S2 已通过：
 
 - `go test ./...`；
 - `golangci-lint --config .golangci.yml run --new-from-rev=HEAD --timeout=10m`，`0 issues`；
 - `CLICKHOUSE_IMAGE=clickhouse/clickhouse-server:25.5.6 ./scripts/test-v1-baseline.sh`；
-- fresh baseline、模拟旧安装升级、post-baseline migration 二次运行幂等；
-- 旧表和普通 metrics ingestion timestamp 列 denylist；
-- OTLP logs/traces/metrics 写入，以及 logs/traces/metrics 字段元数据 smoke check。
+- fresh baseline、模拟旧安装升级、sync/async migration 二次运行幂等；
+- canonical 表 allowlist、旧 versioned 表和普通 metrics ingestion timestamp 列 denylist；
+- OTLP logs/traces/metrics 写入，以及 logs/traces/metrics 字段元数据 smoke check；
+- Trace operations/summary、Service Map DB edge、Metrics rollup/series、Meter rollup 的完整 Materialized View 级联。
 
 SigInsight 协作项：其静态或 OpAMP 生成的 Collector 配置不得再引用
-`metadataexporter`。SigInsight reader/Catalog 必须继续只依赖各信号 exporter 维护的
-keys/value metadata 表。本仓库不修改 SigInsight 代码。
-
-后续 canonical rename/重建阶段开始前，Collector 和 SigInsight 两份文档必须保持同一个
-对象矩阵、字段 allowlist 和 schema fingerprint。
+`metadataexporter`。SigInsight reader/Catalog 必须按上方同步清单切换，并继续只依赖各信号
+exporter 维护的 keys/value metadata 表。本仓库不修改 SigInsight 代码。

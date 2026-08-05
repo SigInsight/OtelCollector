@@ -35,7 +35,7 @@ func runPostBaselineMigrations(ctx context.Context, manager *schemamigrator.Migr
 	}
 
 	for _, item := range postBaselineMigrations(phase) {
-		if err := requireEarlierPostBaselineMigrations(ctx, manager, item); err != nil {
+		if err := requireEarlierPostBaselineMigrations(ctx, manager, item, phase); err != nil {
 			return err
 		}
 		status, exists, err := manager.MigrationStatus(ctx, item.Database, item.Migration.MigrationID)
@@ -74,7 +74,7 @@ func checkPostBaselineMigrations(ctx context.Context, manager *schemamigrator.Mi
 		return err
 	}
 	for _, item := range postBaselineMigrations(phase) {
-		if err := requireEarlierPostBaselineMigrations(ctx, manager, item); err != nil {
+		if err := requireEarlierPostBaselineMigrations(ctx, manager, item, phase); err != nil {
 			return err
 		}
 		status, exists, err := manager.MigrationStatus(ctx, item.Database, item.Migration.MigrationID)
@@ -91,14 +91,13 @@ func checkPostBaselineMigrations(ctx context.Context, manager *schemamigrator.Mi
 	return nil
 }
 
-func requireEarlierPostBaselineMigrations(ctx context.Context, manager *schemamigrator.MigrationManager, current schemamigrator.PostBaselineMigration) error {
-	all := make([]schemamigrator.PostBaselineMigration, 0, len(schemamigrator.PostBaselineSyncMigrations)+len(schemamigrator.PostBaselineAsyncMigrations))
-	all = append(all, schemamigrator.PostBaselineSyncMigrations...)
-	all = append(all, schemamigrator.PostBaselineAsyncMigrations...)
-	for _, earlier := range all {
-		if earlier.Database != current.Database || earlier.Migration.MigrationID >= current.Migration.MigrationID {
-			continue
-		}
+func requireEarlierPostBaselineMigrations(
+	ctx context.Context,
+	manager *schemamigrator.MigrationManager,
+	current schemamigrator.PostBaselineMigration,
+	phase postBaselinePhase,
+) error {
+	for _, earlier := range prerequisitePostBaselineMigrations(current, phase) {
 		status, exists, err := manager.MigrationStatus(ctx, earlier.Database, earlier.Migration.MigrationID)
 		if err != nil {
 			return NewRetryableError(err)
@@ -111,4 +110,24 @@ func requireEarlierPostBaselineMigrations(ctx context.Context, manager *schemami
 		}
 	}
 	return nil
+}
+
+func prerequisitePostBaselineMigrations(
+	current schemamigrator.PostBaselineMigration,
+	phase postBaselinePhase,
+) []schemamigrator.PostBaselineMigration {
+	all := make([]schemamigrator.PostBaselineMigration, 0, len(schemamigrator.PostBaselineSyncMigrations)+len(schemamigrator.PostBaselineAsyncMigrations))
+	all = append(all, schemamigrator.PostBaselineSyncMigrations...)
+	if phase == postBaselineAsyncPhase {
+		all = append(all, schemamigrator.PostBaselineAsyncMigrations...)
+	}
+
+	prerequisites := make([]schemamigrator.PostBaselineMigration, 0, len(all))
+	for _, earlier := range all {
+		if earlier.Database != current.Database || earlier.Migration.MigrationID >= current.Migration.MigrationID {
+			continue
+		}
+		prerequisites = append(prerequisites, earlier)
+	}
+	return prerequisites
 }

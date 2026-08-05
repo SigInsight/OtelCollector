@@ -39,7 +39,7 @@ func testOptions(t *testing.T) []LogExporterOption {
 	// the ttl is set to the same as the bucket rounded value i.e 1800 seconds.
 	// if a resource fingerprint is seen in the bucket already, skip inserting it again.
 	rfCache := ttlcache.New(
-		ttlcache.WithTTL[string, struct{}](distributedLogsResourceV2Seconds*time.Second),
+		ttlcache.WithTTL[string, struct{}](logsResourceCacheSeconds*time.Second),
 		ttlcache.WithDisableTouchOnHit[string, struct{}](),
 		ttlcache.WithCapacity[string, struct{}](100000),
 	)
@@ -125,11 +125,11 @@ func TestExporterPushLogsData(t *testing.T) {
 	}
 
 	// expect prepare batch for 5 tables
-	tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.tag_attributes_v2 \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
+	tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.field_values \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
 	attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_attribute_keys \\(name, datatype\\)")
 	resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_resource_keys \\(name, datatype\\)")
-	logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_v2.*")
-	logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_v2_resource.*")
+	logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs.*")
+	logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.resource_sets.*")
 
 	tagStatementV2.ExpectAppend()
 	tagStatementV2.ExpectSend()
@@ -284,11 +284,11 @@ func TestExporterConcurrency(t *testing.T) {
 			}
 
 			// expect prepare batch for 5 tables
-			tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.tag_attributes_v2 \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
+			tagStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.field_values \\(unix_milli, tag_key, tag_type, tag_data_type, string_value, number_value\\)")
 			attributeKeysStmt := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_attribute_keys \\(name, datatype\\)")
 			resourceKeysStmt := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_resource_keys \\(name, datatype\\)")
-			logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_v2.*")
-			logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs_v2_resource.*")
+			logsStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.logs.*")
+			logsResourceStatementV2 := mock.ExpectPrepareBatch("INSERT INTO siginsight_logs.resource_sets.*")
 
 			tagStatementV2.ExpectAppend()
 			tagStatementV2.ExpectSend()

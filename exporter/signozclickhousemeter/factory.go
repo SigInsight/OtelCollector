@@ -56,6 +56,6 @@ func createDefaultConfig() component.Config {
 		QueueBatchConfig: configoptional.Some(exporterhelper.NewDefaultQueueConfig()),
 		DSN:              "tcp://localhost:9000",
 		Database:         "siginsight_meter",
-		SamplesTable:     "samples",
+		SamplesTable:     "meter_points",
 	}
 }

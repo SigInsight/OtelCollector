@@ -31,7 +31,7 @@ func setupBenchmarkExporter(b *testing.B, mock driver.Conn) *clickhouseLogsExpor
 	// the ttl is set to the same as the bucket rounded value i.e 1800 seconds.
 	// if a resource fingerprint is seen in the bucket already, skip inserting it again.
 	rfCache := ttlcache.New(
-		ttlcache.WithTTL[string, struct{}](distributedLogsResourceV2Seconds*time.Second),
+		ttlcache.WithTTL[string, struct{}](logsResourceCacheSeconds*time.Second),
 		ttlcache.WithDisableTouchOnHit[string, struct{}](),
 		ttlcache.WithCapacity[string, struct{}](100000),
 	)
