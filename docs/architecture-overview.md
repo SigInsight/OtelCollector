@@ -7,7 +7,7 @@
 - 决定要不要在 config 里启用某个新模块
 - 评估再做一轮精简会断哪些用例
 
-参考 commit：`78be1b3` 时的代码状态。下文所有文件路径都指向本仓。
+本文以当前分支的 canonical schema 为准。下文所有文件路径都指向本仓。
 
 ---
 
@@ -104,11 +104,11 @@ ReportsEffectiveConfig | ReportsHealth
 
 | 数据流 | 写入方 | 读取方 | 库.表 |
 |---|---|---|---|
-| traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `siginsight_traces.span_index_v3` 等 |
-| metrics 主数据 | collector (`siginsightclickhousemetrics`) | SigInsight UI 后端 | `siginsight_metrics.*` |
-| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `siginsight_logs.logs_v2` |
-| **metadata**（资源属性、service 列表、attribute keys 字典）| collector (`metadataexporter`) | SigInsight UI 后端 | `siginsight_metadata.*` |
-| **meter**（用量/计费指标）| collector (`siginsightclickhousemeter`，经 `siginsightmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `siginsight_meter.*` |
+| traces 主数据 | collector (`clickhousetraces` exporter) | SigInsight UI 后端 | `siginsight_traces.spans` |
+| metrics 主数据 | collector (`siginsightclickhousemetrics`) | SigInsight UI 后端 | `siginsight_metrics.metric_points`、`metric_series` 及 rollups |
+| logs 主数据 | collector (`clickhouselogsexporter`) | SigInsight UI 后端 | `siginsight_logs.logs` |
+| **field metadata**（资源/属性 keys 与有限值字典）| 各 signal exporter | SigInsight UI 后端 | 各 signal keys/value tables |
+| **meter**（用量/计费指标）| collector (`siginsightclickhousemeter`，经 `siginsightmeter` connector 聚合) | usage 模块 / SigInsight Cloud 计费 | `siginsight_meter.meter_points`、`meter_rollup_1d` |
 | span metrics（RED 指标，由 spans 衍生）| collector (`siginsightspanmetricsprocessor` → `siginsightclickhousemetrics`) | SigInsight UI 后端（Service Map 等） | `siginsight_metrics.*` |
 
 这就是为什么"OpAMP 下发 config"里每个 pipeline 都扇出 3 个 exporter——SigInsight 后端**需要**这 3 类数据都到 CH 才能正常工作。
@@ -209,7 +209,7 @@ Pipeline key 前缀决定 signal 类型：`traces` / `metrics` / `logs` / `profi
 ```
 
 - **多 receiver**：每个 receiver 都把数据塞到同一组 processor 链入口（fan-in）。
-- **多 exporter**：链尾把数据 fan-out 给每个 exporter（**复制 pdata 对象，每个 exporter 独立处理**——这就是为什么 OpAMP 那份 config 里 traces pipeline 写 `[clickhousetraces, metadataexporter, siginsightmeter]` 会让流量乘以 3）。
+- **多 exporter**：链尾把数据 fan-out 给每个 exporter（**复制 pdata 对象，每个 exporter 独立处理**）。当前 traces pipeline 写 `[clickhousetraces, siginsightmeter]`，分别承担 Trace 持久化和用量计量。
 - **processor 顺序敏感**：`batch` 放在 `siginsightspanmetrics/delta` 之后 vs 之前结果不同。
 
 ### 每段配置控制什么行为

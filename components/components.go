@@ -4,7 +4,6 @@ import (
 	"github.com/SigInsight/OtelCollector/connectors/signozmeterconnector"
 	"github.com/SigInsight/OtelCollector/exporter/clickhouselogsexporter"
 	"github.com/SigInsight/OtelCollector/exporter/clickhousetracesexporter"
-	"github.com/SigInsight/OtelCollector/exporter/metadataexporter"
 	"github.com/SigInsight/OtelCollector/exporter/signozclickhousemeter"
 	"github.com/SigInsight/OtelCollector/exporter/signozclickhousemetrics"
 	_ "github.com/SigInsight/OtelCollector/pkg/parser/grok"
@@ -49,7 +48,6 @@ func Components() (otelcol.Factories, error) {
 		signozclickhousemetrics.NewFactory(),
 		clickhousetracesexporter.NewFactory(),
 		debugexporter.NewFactory(),
-		metadataexporter.NewFactory(),
 		nopexporter.NewFactory(),
 		signozclickhousemeter.NewFactory(),
 	}

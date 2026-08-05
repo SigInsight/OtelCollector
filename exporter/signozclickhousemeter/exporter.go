@@ -31,7 +31,7 @@ type clickhouseMeterExporter struct {
 	closeChan  chan struct{}
 }
 
-// sample represents a single metric sample directly mapped to the table `samples` schema
+// sample represents a single metering point mapped to the `meter_points` schema.
 type sample struct {
 	temporality pmetric.AggregationTemporality
 	metricName  string

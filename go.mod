@@ -12,16 +12,13 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/expr-lang/expr v1.17.7
-	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/goccy/go-json v0.10.5
 	github.com/goccy/go-yaml v1.19.2
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/hashicorp/golang-lru v1.0.2
-	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/knadh/koanf v1.5.0
 	github.com/lightstep/go-expohisto v1.0.0
@@ -39,7 +36,6 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
 	github.com/prometheus/prometheus v0.311.4-0.20260507094802-91c184a899b8
-	github.com/redis/go-redis/v9 v9.17.2
 	github.com/segmentio/ksuid v1.0.4
 	github.com/shirou/gopsutil/v4 v4.26.4
 	github.com/spf13/cobra v1.10.2
@@ -47,7 +43,6 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/srikanthccv/ClickHouse-go-mock v0.12.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tidwall/gjson v1.18.0
 	github.com/tilinna/clock v1.1.0
 	github.com/vjeantet/grok v1.0.1
 	go.opencensus.io v0.24.0
@@ -56,7 +51,6 @@ require (
 	go.opentelemetry.io/collector/component/componenttest v0.152.0
 	go.opentelemetry.io/collector/config/configgrpc v0.152.0
 	go.opentelemetry.io/collector/config/confighttp v0.152.0
-	go.opentelemetry.io/collector/config/confignet v1.58.0
 	go.opentelemetry.io/collector/config/configoptional v1.58.0
 	go.opentelemetry.io/collector/config/configretry v1.58.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.152.0
@@ -124,7 +118,6 @@ require (
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/ebitengine/purego v0.10.0 // indirect
 	github.com/elastic/go-grok v0.3.1 // indirect
 	github.com/elastic/lunes v0.2.0 // indirect
@@ -139,6 +132,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.21.0 // indirect
 	github.com/grafana/regexp v0.0.0-20250905093917-f7b3be9d1853 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
@@ -152,7 +146,6 @@ require (
 	github.com/moby/moby/client v0.4.1 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
-	github.com/onsi/gomega v1.38.2 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.152.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.152.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.144.0 // indirect
@@ -168,8 +161,6 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
 	github.com/ua-parser/uap-go v0.0.0-20240611065828-3a4781585db6 // indirect
@@ -181,6 +172,7 @@ require (
 	go.opentelemetry.io/collector/config/configauth v1.58.0 // indirect
 	go.opentelemetry.io/collector/config/configcompression v1.58.0 // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v1.58.0 // indirect
+	go.opentelemetry.io/collector/config/confignet v1.58.0 // indirect
 	go.opentelemetry.io/collector/config/configopaque v1.58.0 // indirect
 	go.opentelemetry.io/collector/config/configtls v1.58.0 // indirect
 	go.opentelemetry.io/collector/confmap/provider/httpprovider v1.50.0 // indirect

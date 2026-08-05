@@ -35,6 +35,16 @@ func TestClassifyConsolidatedBaselineMarker(t *testing.T) {
 			state: BaselineStateCompleteFresh,
 		},
 		{
+			name: "finished marker remains complete after post-baseline tables are removed",
+			snapshot: BaselineSnapshot{
+				TrackingTableCount: 1,
+				MigrationStatuses: map[uint64]string{
+					V1BaselineMigrationID: FinishedStatus,
+				},
+			},
+			state: BaselineStateCompleteFresh,
+		},
+		{
 			name: "failed marker is partial and is not recovered",
 			snapshot: BaselineSnapshot{
 				DomainTableCount:   1,

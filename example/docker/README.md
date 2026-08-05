@@ -57,9 +57,9 @@ You can also point at a GHCR mirror by overriding the image in
 ```yaml
 services:
   otel-collector:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:staging-0533e75
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v1.2.0
   siginsight-telemetrystore-migrator:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:staging-0533e75
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v1.2.0
 ```
 
 ## Notes

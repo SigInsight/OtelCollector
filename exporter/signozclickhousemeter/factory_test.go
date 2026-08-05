@@ -8,6 +8,8 @@ import (
 
 func TestCreateDefaultConfig(t *testing.T) {
 	factory := NewFactory()
-	cfg := factory.CreateDefaultConfig()
-	require.NotNil(t, cfg)
+	cfg, ok := factory.CreateDefaultConfig().(*Config)
+	require.True(t, ok)
+	require.Equal(t, "siginsight_meter", cfg.Database)
+	require.Equal(t, "meter_points", cfg.SamplesTable)
 }

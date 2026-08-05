@@ -152,9 +152,7 @@ func (cmd *bootstrap) UpgradeLegacyStorageNames(ctx context.Context) error {
 
 	for _, rename := range []struct{ old, new string }{
 		{"signoz_index_v3", "span_index_v3"},
-		{"signoz_index_v2", "span_index_v2"},
 		{"signoz_error_index_v2", "error_index_v2"},
-		{"signoz_spans", "legacy_spans"},
 	} {
 		renamed, err := cmd.renameTableIfNeeded(ctx, schemamigrator.SigInsightTracesDB, rename.old, rename.new)
 		if err != nil {
@@ -272,9 +270,7 @@ func rewriteLegacyStorageName(value string) string {
 		"signoz_analytics", schemamigrator.SigInsightAnalyticsDB,
 		"signoz_meter", schemamigrator.SigInsightMeterDB,
 		"signoz_index_v3", "span_index_v3",
-		"signoz_index_v2", "span_index_v2",
 		"signoz_error_index_v2", "error_index_v2",
-		"signoz_spans", "legacy_spans",
 	).Replace(value)
 }
 

@@ -94,8 +94,8 @@ func createDefaultConfig() component.Config {
 		DSN:              "tcp://localhost:9000",
 		EnableExpHist:    false,
 		Database:         "siginsight_metrics",
-		SamplesTable:     "samples_v4",
-		TimeSeriesTable:  "time_series_v4",
+		SamplesTable:     "metric_points",
+		TimeSeriesTable:  "metric_series",
 		ExpHistTable:     "exp_hist",
 		MetadataTable:    "metadata",
 	}
