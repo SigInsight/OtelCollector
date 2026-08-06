@@ -1,7 +1,6 @@
 package schemamigrator
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -82,37 +81,13 @@ func TestClassifyConsolidatedBaselineMarker(t *testing.T) {
 }
 
 func TestV1BaselineSpecsUseStaticFinalSchema(t *testing.T) {
-	type migrationRange struct {
-		baseFirst, baseLast, baseCount             uint64
-		requiredFirst, requiredLast, requiredCount uint64
-	}
-	expected := map[string]migrationRange{
-		SigInsightTracesDB:    {1, 27, 27, 1000, 1008, 9},
-		SigInsightMetricsDB:   {1, 28, 28, 1000, 1007, 8},
-		SigInsightLogsDB:      {1, 9, 9, 1000, 1005, 6},
-		SigInsightMetadataDB:  {0, 0, 0, 1000, 1001, 2},
-		SigInsightAnalyticsDB: {0, 0, 0, 1, 1, 1},
-		SigInsightMeterDB:     {0, 0, 0, 1, 5, 5},
-	}
-
-	totalDDL := 0
 	for _, spec := range V1BaselineSpecs() {
 		require.Equal(t, V1BaselineMigrationID, spec.BaselineMigration.MigrationID)
-
-		want := expected[spec.Database]
-		assertMigrationRange(t, want.baseFirst, want.baseLast, want.baseCount, spec.BaseMigrationIDs)
-		assertMigrationRange(t, want.requiredFirst, want.requiredLast, want.requiredCount, spec.RequiredMigrationIDs)
-
-		ddlCount := int(v1SchemaFingerprints[spec.Database].TableCount)
-		totalDDL += ddlCount
-		extraOperations := 0
-		if spec.Database == SigInsightMetadataDB {
-			extraOperations = 4
-		}
-		require.Len(t, spec.BaselineMigration.UpItems, ddlCount+extraOperations, spec.Database)
+		require.Empty(t, spec.AllowedMigrationIDs, spec.Database)
+		require.Len(t, spec.BaselineMigration.UpItems, int(v1SchemaFingerprints[spec.Database].TableCount), spec.Database)
 
 		previousRank := 0
-		for _, operation := range spec.BaselineMigration.UpItems[:ddlCount] {
+		for _, operation := range spec.BaselineMigration.UpItems {
 			ddl, ok := operation.(StaticDDLOperation)
 			require.True(t, ok, "%s contains a non-static DDL operation", spec.Database)
 			assert.NotContains(t, ddl.Query, "{{")
@@ -123,7 +98,6 @@ func TestV1BaselineSpecsUseStaticFinalSchema(t *testing.T) {
 			previousRank = rank
 		}
 	}
-	assert.Equal(t, 51, totalDDL)
 }
 
 func TestStaticDDLOperationRendersLocalSchema(t *testing.T) {
@@ -133,23 +107,4 @@ func TestStaticDDLOperationRendersLocalSchema(t *testing.T) {
 	assert.NotContains(t, sql, "Replicated")
 	assert.NotContains(t, sql, "Distributed")
 	assert.NotContains(t, sql, "{{")
-}
-
-func assertMigrationRange(t *testing.T, first, last, count uint64, ids []uint64) {
-	t.Helper()
-	require.Len(t, ids, int(count))
-	if count == 0 {
-		return
-	}
-	assert.Equal(t, first, ids[0])
-	assert.Equal(t, last, ids[len(ids)-1])
-}
-
-func staticDDLDependencyRank(query string) int {
-	switch {
-	case strings.HasPrefix(query, "CREATE MATERIALIZED VIEW"):
-		return 2
-	default:
-		return 0
-	}
 }

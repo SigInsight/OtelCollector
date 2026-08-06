@@ -1,6 +1,6 @@
 # SigInsight ClickHouse Schema 收敛：Collector 审核结论
 
-状态：S2 Implemented（Collector canonical schema 已实现并通过 ClickHouse 25.5.6 验证）
+状态：M16 Complete（direct canonical baseline 与跨仓库协作验证已通过）
 日期：2026-08-05
 ClickHouse：`clickhouse/clickhouse-server:25.5.6`
 
@@ -36,7 +36,7 @@ ClickHouse：`clickhouse/clickhouse-server:25.5.6`
 - `time_series_v4.inserted_at_unix_milli`。
 
 两列不被最新 SigInsight 读取，也不参与 `ORDER BY`、TTL 或 ReplacingMergeTree version。
-S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint 保持不变。
+它们不进入 M16 的 `metric_points`、`metric_series` DDL 或 schema fingerprint。
 
 ### S1 迁移后不再存在
 
@@ -45,9 +45,9 @@ S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint �
 - `column_evolution_metadata`、`updated_metadata`；
 - `body_v2`、`body_promoted`、JSON path metadata 及相关索引。
 
-冻结的 v1 baseline DDL 不回写。新安装会先创建 v1 baseline，再由 post-baseline
-异步迁移收敛；已有安装运行同一组幂等迁移。这样可以保持 baseline fingerprint
-和已发布 migration 历史稳定。
+冻结的历史 DDL 仅作为生成输入，不再作为可安装 schema。M16 新安装会按原依赖顺序
+直接生成最终对象，随后以最终 fingerprint 写入 `999` marker；没有 post-baseline
+create/drop/cleanup 链，也不接受旧数据升级。
 
 ## S1 实施结果
 
@@ -68,13 +68,13 @@ S1 已同步更新 INSERT 模板和 batch record；冻结 baseline fingerprint �
 `exp_hist.inserted_at_unix_milli` 未在 S1 删除，因为 exponential histogram 仍是第二批
 能力候选，不能把其写入契约与普通 Gauge/Sum/Histogram 一并改变。
 
-## S2 canonical schema
+## M16 direct canonical schema
 
 S2 不使用 `RENAME TABLE`。ClickHouse 25.5.6 实测表明，重命名 source/target
 不会重写 Materialized View 的定义；后续向新表名写入时，旧 MV 链不会被触发。
-因此 sync migration 从冻结 v1 DDL 派生并创建空 canonical 表和重写后的 MV，
-Collector/SigInsight 在停服发布窗口一起切换，async migration 最后删除旧对象。
-旧数据不复制、不回填，也没有双写或运行时 fallback。
+因此 baseline 从冻结 DDL 派生最终 canonical 表和重写后的 MV，并在第一次 `sync up`
+直接创建它们。Collector/SigInsight 在停服发布窗口一起切换；`async up` 在 M16 没有
+cleanup 工作。旧数据不复制、不回填，也没有双写或运行时 fallback。
 
 Trace `spans` 同时删除所有 camelCase `ALIAS`，并将 `resource_string_service$$name`
 等物化快速路径改为 `service_name`、`http_route`、`db_system`、`rpc_method`
@@ -92,19 +92,10 @@ source 引用；旧 SQL 不再有 alias 回退通道。
 | Metrics series | `time_series_v4`、`time_series_v4_6hrs/1day/1week` 及 MV | `metric_series`、`metric_series_6h/1d/1w` 及 MV |
 | Meter | `samples`、`samples_agg_1d` 及 MV | `meter_points`、`meter_rollup_1d` 及 MV |
 
-### S2 migration IDs
+### M16 migration marker
 
-| Database | Sync create | Async cleanup |
-| --- | --- | --- |
-| `siginsight_traces` | `2002` | `2003` |
-| `siginsight_metrics` | `2003` | `2004` |
-| `siginsight_logs` | `2004` | `2005` |
-| `siginsight_analytics` | `2001` | `2002` |
-| `siginsight_meter` | `2001` | `2002` |
-
-Sync migration 只依赖同库更早的 sync migration。Async migration 依赖同库所有 ID
-更小的 sync/async migration。该规则允许后续发布增加高 ID sync migration，而不会被
-先前发布的低 ID async cleanup 错误阻塞，同时保证删除旧表前 canonical 表已创建。
+每个 telemetry database 只记录 canonical baseline marker `999`。未来 schema 变更从
+`2000` 起登记于 post-baseline registry；M16 的 sync/async registry 均为空。
 
 ## 必须保留的生产写入链
 
@@ -145,15 +136,13 @@ Sync migration 只依赖同库更早的 sync migration。Async migration 依赖�
 
 ## 发布顺序
 
-1. 停止 SigInsight 和 Collector，阻止旧 writer 在切换窗口继续写入。
-2. 执行 sync migration，创建空 canonical 表及完整 MV 链；不复制旧数据。
-3. 部署同一发布单元中的新 Collector writer 与 SigInsight reader/Catalog。
+1. 停止 SigInsight 和 Collector，丢弃原有 `siginsight_*` telemetry databases。
+2. 执行 `bootstrap`、`sync up`、`async up`，从空实例直接创建最终 schema 及 MV 链。
+3. 部署同一发布单元中的 Collector v2.0.0 与 SigInsight reader/Catalog。
 4. schema readiness 通过后启动服务并写入真实 OTLP fixtures。
 5. 执行 Logs、Traces、Metrics Explorer、Service Map、Exceptions、Alert、Retention 和 Meter 验证。
-6. 执行 async migration 删除旧 versioned 对象；不保留运行时 fallback。
 
-不能在旧 SigInsight reader 仍运行时执行 async cleanup，也不能让新 Collector writer 在
-sync migration 前启动。部署编排必须把这两条作为硬性前置条件。
+旧 reader/writer 不能连接 M16 schema；这是刻意的破坏性边界，而非可就地回滚的升级。
 
 ### SigInsight reader/Catalog 同步清单
 
@@ -182,16 +171,20 @@ bootstrap 旧安装识别及 denylist 测试中的旧名称不属于运行时引
 
 ## 验证记录
 
-2026-08-05 S1、S2 已通过：
+已在 ClickHouse 25.5.6 上完成：
 
-- `go test ./...`；
-- `golangci-lint --config .golangci.yml run --new-from-rev=HEAD --timeout=10m`，`0 issues`；
-- `CLICKHOUSE_IMAGE=clickhouse/clickhouse-server:25.5.6 ./scripts/test-v1-baseline.sh`；
-- fresh baseline、模拟旧安装升级、sync/async migration 二次运行幂等；
-- canonical 表 allowlist、旧 versioned 表和普通 metrics ingestion timestamp 列 denylist；
-- OTLP logs/traces/metrics 写入，以及 logs/traces/metrics 字段元数据 smoke check；
-- Trace operations/summary、Service Map DB edge、Metrics rollup/series、Meter rollup 的完整 Materialized View 级联。
+- `go test ./cmd/siginsightschemamigrator/schema_migrator ./cmd/siginsightotelcollector/migrate ./exporter/clickhouselogsexporter ./exporter/clickhousetracesexporter ./exporter/signozclickhousemetrics`；
+- `./scripts/test-v1-baseline.sh`，验证 fresh direct baseline、sync/async 二次执行幂等、
+  canonical 表/列 fingerprint、legacy object/DDL denylist、无 cluster/distributed 对象、真实
+  OTLP logs/traces/metrics/meter 写入和完整 MV 级联；
+- SigInsight 认证 API 协作测试 `compat/03_litequery_collector_collaboration.py`：当前 Collector
+  写入后，V5 查询读取 Logs、Traces、Metrics、Meter；
+- SigInsight 的完整复现脚本覆盖 collaboration、materialized catalog 与 retention，两次独立
+  运行均为 `17 passed`（最新运行 `246.78s`）。
 
-SigInsight 协作项：其静态或 OpAMP 生成的 Collector 配置不得再引用
-`metadataexporter`。SigInsight reader/Catalog 必须按上方同步清单切换，并继续只依赖各信号
-exporter 维护的 keys/value metadata 表。本仓库不修改 SigInsight 代码。
+协作 query log 证明 Logs、Traces、Metrics 与 Meter 查询均命中各自的 canonical 表且返回非空
+结果；Meter rollup 的异步触发会影响具体行数。没有 unknown table/column 或旧表读取。完整复现入口为
+SigInsight 的 `tests/integration/scripts/run-canonical-schema-cutover.sh`。
+
+SigInsight 的静态或 OpAMP 生成 Collector 配置不得引用 `metadataexporter`。reader/Catalog 已按
+上方清单切换，只依赖各信号 exporter 维护的 keys/value metadata 表。

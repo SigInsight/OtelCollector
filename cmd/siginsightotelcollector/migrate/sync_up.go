@@ -59,6 +59,9 @@ func newSyncUp(dsn string, timeout time.Duration, logger *zap.Logger) (*syncUp, 
 		schemamigrator.WithConn(conn),
 		schemamigrator.WithLogger(logger),
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return &syncUp{
 		migrationManager: migrationManager,
