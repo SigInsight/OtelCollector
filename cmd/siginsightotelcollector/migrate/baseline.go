@@ -167,7 +167,10 @@ func formatBaselineStateError(report schemamigrator.BaselineReport) error {
 		))
 	}
 	return fmt.Errorf(
-		"v1 baseline is %s; automatic migration recovery is disabled: %s",
+		"v1 baseline is %s; automatic migration recovery is disabled. "+
+			"This collector installs a destructive canonical schema and cannot adopt an existing telemetry schema. "+
+			"Use a new ClickHouse data directory or explicitly discard the siginsight_* telemetry databases before retrying; "+
+			"a ClickHouse-only reset does not remove SQL-store data: %s",
 		report.State,
 		strings.Join(details, "; "),
 	)

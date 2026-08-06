@@ -17,6 +17,13 @@
 # same image tag, otherwise the migration list embedded in the binary can
 # drift between the two and the collector's `migrate sync check` will fail.
 #
+# v2.0.0+ installs a destructive canonical ClickHouse schema. It cannot adopt
+# an earlier telemetry volume. Before this upgrade, stop the stack and remove
+# only the ClickHouse volume (`docker compose down && docker volume rm
+# siginsight-clickhouse`); retain the SQLite volume unless its data is also to
+# be discarded. The migrator fails once and prevents application startup when
+# this prerequisite has not been completed.
+#
 # Quick start:
 #   cp .env.example .env             # edit OTELCOL_TAG to match the GHCR image
 #   docker compose up -d
@@ -63,6 +70,12 @@ x-db-depend: &db-depend
     clickhouse:
       condition: service_healthy
 
+x-schema-depend: &schema-depend
+  !!merge <<: *common
+  depends_on:
+    siginsight-telemetrystore-migrator:
+      condition: service_completed_successfully
+
 services:
   init-clickhouse:
     !!merge <<: *common
@@ -100,7 +113,7 @@ services:
       # - ./common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
 
   siginsight:
-    !!merge <<: *db-depend
+    !!merge <<: *schema-depend
     image: ${SIGINSIGHT_IMAGE:-ghcr.io/siginsight/siginsight:${VERSION:-v1.5.0}}
     container_name: siginsight
     ports:
@@ -122,7 +135,7 @@ services:
   # Long-running collector. Runs `migrate sync check` as a startup gate so it
   # waits until telemetrystore-migrator has finished schema bring-up.
   otel-collector:
-    !!merge <<: *db-depend
+    !!merge <<: *schema-depend
     image: ghcr.io/siginsight/siginsight-otel-collector:${OTELCOL_TAG:-v2.0.1}
     container_name: siginsight-otel-collector
     entrypoint: ["/bin/sh"]
@@ -160,7 +173,9 @@ services:
         /siginsight-otel-collector migrate bootstrap &&
         /siginsight-otel-collector migrate sync up &&
         /siginsight-otel-collector migrate async up
-    restart: on-failure
+    # A schema mismatch is deterministic. Keep the failing job stopped so its
+    # error is actionable rather than hidden by an infinite restart loop.
+    restart: "no"
 
 networks:
   siginsight-net:

@@ -40,6 +40,27 @@ docker compose logs -f siginsight-otel-collector
 
 Open the UI at <http://localhost:8080>.
 
+## Destructive v2.0.0 schema cutover
+
+Collector `v2.0.0+` creates the canonical ClickHouse schema directly. It does
+not migrate the historical versioned tables, copy telemetry, or infer a
+migration marker from an old database. An upgrade from an earlier collector
+must discard the ClickHouse telemetry volume before the first `up`:
+
+```bash
+cd example/docker
+docker compose down
+docker volume rm siginsight-clickhouse
+docker compose up -d
+docker compose logs -f siginsight-telemetrystore-migrator
+```
+
+Do not use `docker compose down -v` unless SQLite data (users, alert rules and
+other application state) should also be erased. The compose file starts
+SigInsight and the collector only after the migration job has succeeded. If it
+stops with a non-zero exit code, inspect that job rather than waiting for the
+application containers to retry.
+
 ## Pulling from GHCR
 
 If the GHCR package is **private**:
