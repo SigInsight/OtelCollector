@@ -138,7 +138,7 @@ source 引用；旧 SQL 不再有 alias 回退通道。
 
 1. 停止 SigInsight 和 Collector，丢弃原有 `siginsight_*` telemetry databases。
 2. 执行 `bootstrap`、`sync up`、`async up`，从空实例直接创建最终 schema 及 MV 链。
-3. 部署同一发布单元中的 Collector v2.0.0 与 SigInsight reader/Catalog。
+3. 部署同一发布单元中的 Collector v2.0.1 与 SigInsight reader/Catalog。
 4. schema readiness 通过后启动服务并写入真实 OTLP fixtures。
 5. 执行 Logs、Traces、Metrics Explorer、Service Map、Exceptions、Alert、Retention 和 Meter 验证。
 

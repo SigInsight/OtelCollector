@@ -62,6 +62,16 @@ fmt:
 	@echo Running go fmt on query service ...
 	@$(GOFMT) -e -s -l -w .
 
+.PHONY: format-staged
+format-staged:
+	@./scripts/format-staged.sh
+
+.PHONY: install-git-hooks
+install-git-hooks:
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/pre-commit scripts/format-staged.sh
+	@echo "Installed repository Git hooks."
+
 .PHONY: build-and-push-siginsight-collector
 build-and-push-siginsight-collector:
 	@echo "------------------"
