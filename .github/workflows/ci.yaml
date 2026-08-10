@@ -89,3 +89,10 @@ jobs:
       # wall time after the first run.
       - name: test
         run: go test -tags="${PROMETHEUS_BUILD_TAGS}" -count=1 -race -cover -p 4 -parallel 4 ./...
+
+  compose-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validate example compose
+        run: ./scripts/validate-example-compose.sh

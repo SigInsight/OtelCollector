@@ -54,9 +54,7 @@ func ensureV1Baseline(ctx context.Context, manager *schemamigrator.MigrationMana
 			return NewRetryableError(err)
 		}
 		if finishedMarkers == len(schemamigrator.V1BaselineSpecs()) {
-			// The exact v1 fingerprint was verified before these markers were
-			// written. Post-baseline migrations may change that fingerprint.
-			return nil
+			return verifyCanonicalSchemas(ctx, manager, schemamigrator.V1BaselineSpecs())
 		}
 		if finishedMarkers != 0 {
 			return New(fmt.Errorf("v1 baseline has markers for %d/%d databases; automatic recovery is disabled", finishedMarkers, len(schemamigrator.V1BaselineSpecs())))
@@ -117,7 +115,7 @@ func requireV1Baseline(ctx context.Context, manager *schemamigrator.MigrationMan
 	if finishedMarkers != len(schemamigrator.V1BaselineSpecs()) {
 		return New(fmt.Errorf("v1 baseline is complete but not all 999 markers are finished; run sync up first"))
 	}
-	return nil
+	return verifyCanonicalSchemas(ctx, manager, schemamigrator.V1BaselineSpecs())
 }
 
 func countFinishedV1BaselineMarkers(ctx context.Context, manager *schemamigrator.MigrationManager) (int, error) {
@@ -142,6 +140,22 @@ func verifyV1BaselineSchemas(
 	for _, spec := range specs {
 		if err := manager.VerifyV1BaselineSchema(ctx, spec); err != nil {
 			if errors.Is(err, schemamigrator.ErrV1SchemaMismatch) {
+				return New(err)
+			}
+			return NewRetryableError(err)
+		}
+	}
+	return nil
+}
+
+func verifyCanonicalSchemas(
+	ctx context.Context,
+	manager *schemamigrator.MigrationManager,
+	specs []schemamigrator.BaselineSpec,
+) error {
+	for _, spec := range specs {
+		if err := manager.VerifyCanonicalSchema(ctx, spec.Database); err != nil {
+			if errors.Is(err, schemamigrator.ErrCanonicalSchemaMismatch) {
 				return New(err)
 			}
 			return NewRetryableError(err)

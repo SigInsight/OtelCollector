@@ -9,7 +9,7 @@ single-node ClickHouse instance.
 ```
 example/docker/
 ├── docker-compose.yaml            this file's stack definition
-├── .env.example                   tag overrides (OTELCOL_TAG, VERSION, ...)
+├── .env.example                   tag overrides (OTELCOL_TAG, SIGINSIGHT_TAG, ...)
 └── common/                        configs mounted into containers
     ├── clickhouse/                config.xml, users.xml, cluster.xml, ...
     └── siginsight/
@@ -32,7 +32,7 @@ upstream stack changes if you want to track new defaults.
 
 ```bash
 cd example/docker
-cp .env.example .env                      # set OTELCOL_TAG to the GHCR tag
+cp .env.example .env                      # set paired Collector/SigInsight tags
 # put your ClickHouse / opamp / collector configs in place
 docker compose up -d
 docker compose logs -f siginsight-otel-collector
@@ -90,6 +90,8 @@ services:
   binary, and a mismatch will make the collector's `migrate sync check`
   fail or, worse, write into a stale schema. The compose file uses the
   single `OTELCOL_TAG` variable for both.
+- `SIGINSIGHT_TAG` must point at a release that reads the canonical schema.
+  The checked-in default pairs SigInsight `v2.2.2` with Collector `v2.0.1`.
 - The amd64 image is the only one this fork's CI builds. On arm64 hosts
   you'll need to re-enable arm64 in `.github/workflows/build.yaml` and
   rebuild.

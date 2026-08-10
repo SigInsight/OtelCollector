@@ -114,7 +114,7 @@ services:
 
   siginsight:
     !!merge <<: *schema-depend
-    image: ${SIGINSIGHT_IMAGE:-ghcr.io/siginsight/siginsight:${VERSION:-v1.5.0}}
+    image: ${SIGINSIGHT_IMAGE:-ghcr.io/siginsight/siginsight:${SIGINSIGHT_TAG:-v2.2.2}}
     container_name: siginsight
     ports:
       - "8080:8080"
@@ -126,7 +126,7 @@ services:
       - SIGINSIGHT_SQLSTORE_SQLITE_PATH=/var/lib/siginsight/siginsight.db
       - SIGINSIGHT_TOKENIZER_JWT_SECRET=secret
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v1/health"]
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v5/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3

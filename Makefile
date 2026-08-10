@@ -28,7 +28,11 @@ install-tools:
 .DEFAULT_GOAL := test-and-lint
 
 .PHONY: test-and-lint
-test-and-lint: test fmt lint
+test-and-lint: test validate-example-compose fmt lint
+
+.PHONY: validate-example-compose
+validate-example-compose:
+	@./scripts/validate-example-compose.sh
 
 .PHONY: test
 test:

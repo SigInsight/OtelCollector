@@ -97,6 +97,12 @@ source 引用；旧 SQL 不再有 alias 回退通道。
 每个 telemetry database 只记录 canonical baseline marker `999`。未来 schema 变更从
 `2000` 起登记于 post-baseline registry；M16 的 sync/async registry 均为空。
 
+`999` 不是永久跳过 schema 校验的凭据。Collector 启动前的 `migrate sync check` 会重新
+计算 runtime-stable fingerprint：表引擎、partition/sorting/primary key、物化视图定义、
+列顺序/类型/codec 和 data-skipping index 必须完全匹配。表 TTL、storage policy 以及日志
+`_retention_days*` 的默认表达式由 Retention API 合法修改，因此不进入运行时 fingerprint。
+连接失败会重试，确定性的 schema drift 会立即失败。
+
 ## 必须保留的生产写入链
 
 | 能力 | Source | Target/consumer |
