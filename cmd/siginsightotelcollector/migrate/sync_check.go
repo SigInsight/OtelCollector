@@ -97,8 +97,11 @@ func (cmd *syncCheck) Run(ctx context.Context) error {
 }
 
 func (cmd *syncCheck) Check(ctx context.Context) error {
-	if err := requireV1Baseline(ctx, cmd.migrationManager); err != nil {
+	if err := requireCanonicalBaseline(ctx, cmd.migrationManager); err != nil {
 		return err
 	}
-	return checkPostBaselineMigrations(ctx, cmd.migrationManager, postBaselineSyncPhase)
+	if err := checkPostBaselineMigrations(ctx, cmd.migrationManager, postBaselineSyncPhase); err != nil {
+		return err
+	}
+	return verifyCanonicalSchemas(ctx, cmd.migrationManager, schemamigrator.CanonicalBaselineSpecs())
 }

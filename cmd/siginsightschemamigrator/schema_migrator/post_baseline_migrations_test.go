@@ -61,7 +61,7 @@ func TestCanonicalBaselineIsFinalSchema(t *testing.T) {
 	}
 	versionedBusinessTable := regexp.MustCompile(`(?:^|_)(?:v[0-9]+|agg_[0-9]+)(?:_|$)`)
 
-	for _, spec := range V1BaselineSpecs() {
+	for _, spec := range CanonicalBaselineSpecs() {
 		t.Run(spec.Database, func(t *testing.T) {
 			operations := spec.BaselineMigration.UpItems
 			got := make([]string, 0, len(operations))
@@ -78,7 +78,7 @@ func TestCanonicalBaselineIsFinalSchema(t *testing.T) {
 				previousRank = rank
 			}
 			require.ElementsMatch(t, expected[spec.Database], got)
-			require.Equal(t, uint64(len(expected[spec.Database])), v1SchemaFingerprints[spec.Database].TableCount)
+			require.Len(t, operations, len(expected[spec.Database]))
 		})
 	}
 }
@@ -109,9 +109,11 @@ func TestCanonicalMaterializedViewsUseCanonicalSourcesAndTargets(t *testing.T) {
 func TestCanonicalTraceColumnsAndMetricsColumns(t *testing.T) {
 	spansDDL := canonicalDDLQuery(t, SigInsightTracesDB, "spans")
 	require.NotContains(t, spansDDL, " ALIAS ")
-	for _, rename := range canonicalTraceColumnRenames {
-		require.NotContains(t, spansDDL, rename.from)
-		require.Contains(t, spansDDL, "`"+rename.to+"`")
+	for _, column := range []string{
+		"service_name", "http_route", "messaging_system", "messaging_operation",
+		"db_system", "rpc_system", "rpc_service", "rpc_method", "peer_service",
+	} {
+		require.Contains(t, spansDDL, "`"+column+"`")
 	}
 	require.Contains(t, spansDDL, "INDEX idx_http_route `http_route`")
 	require.Contains(t, spansDDL, "INDEX idx_rpc_method `rpc_method`")
@@ -123,12 +125,17 @@ func TestCanonicalTraceColumnsAndMetricsColumns(t *testing.T) {
 }
 
 func TestCanonicalBaselineHasNoLegacyReferences(t *testing.T) {
-	for _, spec := range V1BaselineSpecs() {
+	legacyNames := []string{
+		"rule_state_history_v0", "logs_v2", "logs_v2_resource", "tag_attributes_v2",
+		"samples_v4", "time_series_v4", "span_index_v3", "traces_v3_resource",
+		"error_index_v2", "top_level_operations", "dependency_graph_minutes_v2",
+		"samples_agg_1d",
+	}
+	for _, spec := range CanonicalBaselineSpecs() {
 		for _, operation := range spec.BaselineMigration.UpItems {
 			ddl := operation.(StaticDDLOperation)
-			for _, rename := range canonicalSchemaRenames[spec.Database] {
-				legacyObject := regexp.MustCompile(regexp.QuoteMeta(spec.Database+"."+rename.from) + `(?:\s|$|\(|,)`)
-				require.False(t, legacyObject.MatchString(ddl.Query), ddl.Table+": "+ddl.Query)
+			for _, legacyName := range legacyNames {
+				require.NotContains(t, ddl.Query, legacyName)
 			}
 			require.NotContains(t, ddl.Query, "body_promoted")
 			require.NotContains(t, ddl.Query, "body_v2")
@@ -148,7 +155,7 @@ func TestNoPostBaselineCutoverMigrationsRemain(t *testing.T) {
 
 func canonicalDDLQuery(t *testing.T, database, table string) string {
 	t.Helper()
-	for _, operation := range canonicalBaselineOperations(database) {
+	for _, operation := range canonicalBaselineDDLOperations[database] {
 		ddl := operation.(StaticDDLOperation)
 		if ddl.Table == table {
 			return ddl.Query

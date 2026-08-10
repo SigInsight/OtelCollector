@@ -32,6 +32,16 @@ fail() {
 	exit 1
 }
 
+assert_migrate_fails() {
+	local expected="$1"
+	shift
+	local output
+	if output="$(current_migrate "$@" 2>&1)"; then
+		fail "migrate $* unexpectedly succeeded"
+	fi
+	[[ "${output}" == *"${expected}"* ]] || fail "migrate $* failed without ${expected@Q}: ${output}"
+}
+
 assert_equal() {
 	local expected="$1"
 	local actual="$2"
@@ -191,6 +201,18 @@ assert_no_coordination_features() {
 	assert_equal "0" "${on_cluster_count}" "ON CLUSTER telemetry DDL"
 }
 
+assert_schema_and_marker_gates() {
+	clickhouse_query "ALTER TABLE siginsight_logs.logs ADD COLUMN _schema_drift_probe UInt8" >/dev/null
+	assert_migrate_fails "canonical runtime schema fingerprint mismatch" sync check
+	clickhouse_query "ALTER TABLE siginsight_logs.logs DROP COLUMN _schema_drift_probe" >/dev/null
+	current_migrate sync check
+
+	clickhouse_query "ALTER TABLE siginsight_logs.schema_migrations_v2 DELETE WHERE migration_id = 999 SETTINGS mutations_sync = 1" >/dev/null
+	assert_migrate_fails "missing_marker=true" sync check
+	clickhouse_query "INSERT INTO siginsight_logs.schema_migrations_v2 (migration_id, status, created_at) VALUES (999, 'finished', now64(9))" >/dev/null
+	current_migrate sync check
+}
+
 echo "Building current collector"
 go build -tags=remove_all_sd -o "${collector_binary}" "${repo_root}/cmd/siginsightotelcollector"
 
@@ -213,6 +235,8 @@ current_migrate ready
 current_migrate bootstrap
 current_migrate sync up
 current_migrate async up
+current_migrate sync up
+current_migrate async up
 current_migrate sync check
 current_migrate async check
 assert_baseline_markers
@@ -223,5 +247,6 @@ assert_canonical_trace_columns
 assert_materialized_view_contract
 assert_no_coordination_features
 assert_collector_writes_canonical_schema
+assert_schema_and_marker_gates
 
 echo "canonical schema integration test passed"

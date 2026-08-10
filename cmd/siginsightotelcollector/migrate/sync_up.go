@@ -99,7 +99,7 @@ func (cmd *syncUp) Run(ctx context.Context) error {
 }
 
 func (cmd *syncUp) SyncUp(ctx context.Context) error {
-	if err := ensureV1Baseline(ctx, cmd.migrationManager, cmd.logger); err != nil {
+	if err := ensureCanonicalBaseline(ctx, cmd.migrationManager, cmd.logger); err != nil {
 		return err
 	}
 	return runPostBaselineMigrations(ctx, cmd.migrationManager, postBaselineSyncPhase, cmd.logger)

@@ -12,7 +12,6 @@ import (
 func expectCanonicalFingerprint(
 	t *testing.T,
 	conn mockhouse.ClickConnMockCommon,
-	database string,
 	fingerprint CanonicalSchemaFingerprint,
 ) {
 	t.Helper()
@@ -38,7 +37,7 @@ func TestVerifyCanonicalSchema(t *testing.T) {
 	conn, err := mockhouse.NewClickHouseNative(nil)
 	require.NoError(t, err)
 	expected := canonicalSchemaFingerprints[SigInsightLogsDB]
-	expectCanonicalFingerprint(t, conn, SigInsightLogsDB, expected)
+	expectCanonicalFingerprint(t, conn, expected)
 
 	manager, err := NewMigrationManager(WithConn(conn), WithLogger(zap.NewNop()))
 	require.NoError(t, err)
@@ -51,7 +50,7 @@ func TestVerifyCanonicalSchemaRejectsDrift(t *testing.T) {
 	require.NoError(t, err)
 	drifted := canonicalSchemaFingerprints[SigInsightLogsDB]
 	drifted.ColumnHash++
-	expectCanonicalFingerprint(t, conn, SigInsightLogsDB, drifted)
+	expectCanonicalFingerprint(t, conn, drifted)
 
 	manager, err := NewMigrationManager(WithConn(conn), WithLogger(zap.NewNop()))
 	require.NoError(t, err)
