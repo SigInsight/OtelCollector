@@ -17,14 +17,14 @@ required=(
   "localhost:8080/api/v5/healthz"
 )
 for value in "${required[@]}"; do
-  if ! rg --fixed-strings --quiet "${value}" "${rendered}"; then
+  if ! grep -Fq -- "${value}" "${rendered}"; then
     echo "compose contract is missing: ${value}" >&2
     exit 1
   fi
 done
 
 for stale in "v0.117.1" "v1.5.0" "/api/v1/health"; do
-  if rg --fixed-strings --quiet "${stale}" "${rendered}"; then
+  if grep -Fq -- "${stale}" "${rendered}"; then
     echo "compose contract contains stale value: ${stale}" >&2
     exit 1
   fi
