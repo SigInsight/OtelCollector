@@ -1,10 +1,14 @@
 # Schema migrations
 
-The v1 schema is a frozen compatibility boundary. The static DDL in
-`cmd/siginsightschemamigrator/schema_migrator/v1_baseline_ddl.go` and the
-`V1BaselineSpecs` history must not be edited after the baseline is released.
-The `999` record means that the exact v1 schema was created or verified; it is
-not a version to increment.
+The M16 schema is a destructive fresh-install boundary. The explicit DDL in
+`cmd/siginsightschemamigrator/schema_migrator/canonical_baseline_ddl.go` is the
+single baseline source of truth. The `999` record means that this canonical
+schema passed fingerprint validation; it is not a version to increment.
+
+The migrator does not adopt pre-M16 histories or rewrite legacy table/column
+names. Only a pristine set of `siginsight_*` databases can be initialized.
+Existing databases must contain a finished `999` marker and match the runtime
+fingerprint, otherwise startup is rejected.
 
 ## Adding a migration
 
@@ -20,26 +24,31 @@ not a version to increment.
    synchronous ID lower. The runner will not execute a migration whose earlier
    registered IDs are unfinished.
 4. Use the existing `Operation` types. Prefer idempotent operations such as
-   `AlterTableAddColumn`; do not add a second copy of the v1 DDL to the frozen
-   baseline file.
+   `AlterTableAddColumn`; do not modify the canonical baseline to ship a change
+   to an already initialized database.
 
 The runner records `in-progress`, then `finished` or `failed`. A failed or
 interrupted migration is deliberately not retried automatically. Resolve the
 database state and migration record explicitly before attempting another
 release.
 
+`sync up` validates the canonical marker before applying registered migrations.
+`sync check` first requires every synchronous migration to be finished and then
+validates the final runtime fingerprint. This ordering lets an old canonical
+baseline advance to a new registered schema without weakening the startup gate.
+
 ## Verification
 
 Add assertions for the new schema to `scripts/test-v1-baseline.sh` and update
-its current-schema fingerprints when the expected post-baseline schema changes.
-Do not change the frozen v1 fingerprints used internally to adopt a completed
-v1.0.4 database. Run:
+the runtime fingerprints only when a registered post-baseline migration changes
+the expected schema. Run:
 
 ```text
 go test -tags=remove_all_sd ./...
 make test-migration-integration
 ```
 
-The integration script must continue to cover v1.0.4 adoption, fresh
-single-node local-table creation, and rejection of failed migration
-states.
+The integration script must continue to cover fresh single-node creation,
+idempotent marker handling, schema drift rejection, failed/missing marker
+rejection, canonical writer output, and all materialized-view chains on the
+oldest supported ClickHouse version.

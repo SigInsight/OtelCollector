@@ -30,7 +30,7 @@ func runPostBaselineMigrations(ctx context.Context, manager *schemamigrator.Migr
 	if err := schemamigrator.ValidatePostBaselineMigrations(); err != nil {
 		return New(err)
 	}
-	if err := requireV1Baseline(ctx, manager); err != nil {
+	if err := requireCanonicalBaseline(ctx, manager); err != nil {
 		return err
 	}
 
@@ -70,7 +70,7 @@ func checkPostBaselineMigrations(ctx context.Context, manager *schemamigrator.Mi
 	if err := schemamigrator.ValidatePostBaselineMigrations(); err != nil {
 		return New(err)
 	}
-	if err := requireV1Baseline(ctx, manager); err != nil {
+	if err := requireCanonicalBaseline(ctx, manager); err != nil {
 		return err
 	}
 	for _, item := range postBaselineMigrations(phase) {

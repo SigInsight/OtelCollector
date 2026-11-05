@@ -10,170 +10,65 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestClassifyBaselineState(t *testing.T) {
+func TestClassifyCanonicalBaselineState(t *testing.T) {
 	spec := BaselineSpec{
-		Database:             SigInsightLogsDB,
-		BaseMigrationIDs:     []uint64{1, 2},
-		RequiredMigrationIDs: []uint64{1000, 1001},
+		Database:            SigInsightLogsDB,
+		AllowedMigrationIDs: []uint64{2000},
+		BaselineMigration:   SchemaMigrationRecord{MigrationID: CanonicalBaselineMigrationID},
 	}
-
 	tests := []struct {
-		name     string
-		snapshot BaselineSnapshot
-		state    BaselineState
-		missing  []uint64
-		nonFinal []uint64
-		ahead    []uint64
+		name       string
+		snapshot   BaselineSnapshot
+		state      BaselineState
+		missing    bool
+		nonFinal   []uint64
+		unexpected []uint64
 	}{
-		{
-			name: "empty",
-			snapshot: BaselineSnapshot{
-				TrackingTableCount: 1,
-				MigrationStatuses:  map[uint64]string{},
-			},
-			state: BaselineStateEmpty,
-		},
-		{
-			name: "complete fresh",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 1,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FinishedStatus,
-				},
-			},
-			state: BaselineStateCompleteFresh,
-		},
-		{
-			name: "complete legacy",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				LegacyTableExists:  true,
-				TrackingTableCount: 1,
-				MigrationStatuses: map[uint64]string{
-					1000: FinishedStatus, 1001: FinishedStatus,
-				},
-			},
-			state: BaselineStateCompleteLegacy,
-		},
-		{
-			name: "missing migration",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 1,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus,
-				},
-			},
-			state:   BaselineStatePartial,
-			missing: []uint64{1001},
-		},
-		{
-			name: "failed migration",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 1,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FailedStatus,
-				},
-			},
-			state:    BaselineStatePartial,
-			nonFinal: []uint64{1001},
-		},
-		{
-			name: "incomplete tracking tables",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 0,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FinishedStatus,
-				},
-			},
-			state: BaselineStatePartial,
-		},
-		{
-			name: "database ahead of baseline",
-			snapshot: BaselineSnapshot{
-				DomainTableCount:   1,
-				TrackingTableCount: 1,
-				MigrationStatuses: map[uint64]string{
-					1: FinishedStatus, 2: FinishedStatus,
-					1000: FinishedStatus, 1001: FinishedStatus,
-					3000: FinishedStatus,
-				},
-			},
-			state: BaselineStateAhead,
-			ahead: []uint64{3000},
-		},
+		{name: "pristine", snapshot: BaselineSnapshot{TrackingTableCount: 1, MigrationStatuses: map[uint64]string{}}, state: BaselineStateEmpty},
+		{name: "canonical marker", snapshot: BaselineSnapshot{DomainTableCount: 6, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{999: FinishedStatus}}, state: BaselineStateComplete},
+		{name: "registered future migration", snapshot: BaselineSnapshot{DomainTableCount: 6, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{999: FinishedStatus, 2000: FinishedStatus}}, state: BaselineStateComplete},
+		{name: "legacy tracking table", snapshot: BaselineSnapshot{DomainTableCount: 6, LegacyTrackingTableCount: 1, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{999: FinishedStatus}}, state: BaselineStateIncompatible},
+		{name: "unmarked tables", snapshot: BaselineSnapshot{DomainTableCount: 1, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{}}, state: BaselineStateIncompatible, missing: true},
+		{name: "failed marker", snapshot: BaselineSnapshot{DomainTableCount: 1, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{999: FailedStatus}}, state: BaselineStateIncompatible, missing: true, nonFinal: []uint64{999}},
+		{name: "unknown migration", snapshot: BaselineSnapshot{DomainTableCount: 6, TrackingTableCount: 1, MigrationStatuses: map[uint64]string{999: FinishedStatus, 1000: FinishedStatus}}, state: BaselineStateIncompatible, unexpected: []uint64{1000}},
 	}
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := ClassifyBaselineState(spec, tc.snapshot)
 			assert.Equal(t, tc.state, got.State)
-			assert.Equal(t, tc.missing, got.MissingMigrationIDs)
+			assert.Equal(t, tc.missing, got.MissingBaselineMarker)
 			assert.Equal(t, tc.nonFinal, got.NonFinishedMigrationIDs)
-			assert.Equal(t, tc.ahead, got.UnexpectedMigrationIDs)
+			assert.Equal(t, tc.unexpected, got.UnexpectedMigrationIDs)
 		})
 	}
 }
 
-func TestV1BaselineSpecs(t *testing.T) {
-	specs := V1BaselineSpecs()
+func TestCanonicalBaselineSpecs(t *testing.T) {
+	specs := CanonicalBaselineSpecs()
 	require.Len(t, specs, len(Databases))
-	assert.Equal(t, Databases, baselineDatabases(specs))
+	for index, spec := range specs {
+		assert.Equal(t, Databases[index], spec.Database)
+		assert.Equal(t, CanonicalBaselineMigrationID, spec.BaselineMigration.MigrationID)
+	}
 }
 
-func TestInspectBaselineState(t *testing.T) {
+func TestInspectCanonicalBaselineState(t *testing.T) {
 	conn, err := mockhouse.NewClickHouseNative(nil)
 	require.NoError(t, err)
-
-	inventoryRow := mockhouse.NewRow(
-		[]mockhouse.ColumnType{
-			{Name: "domain_tables", Type: "UInt64"},
-			{Name: "legacy_tables", Type: "UInt64"},
-			{Name: "tracking_tables", Type: "UInt64"},
-		},
-		[]any{uint64(1), uint64(0), uint64(1)},
-	)
-	conn.ExpectQueryRow(baselineInventoryQuery).WillReturnRow(inventoryRow)
-
-	migrationRows := mockhouse.NewRows(
-		[]mockhouse.ColumnType{
-			{Name: "migration_id", Type: "UInt64"},
-			{Name: "status", Type: "String"},
-		},
-		[][]any{
-			{uint64(1), FinishedStatus},
-			{uint64(1000), FinishedStatus},
-		},
-	)
-	conn.ExpectQuery(baselineMigrationsQuery(SigInsightLogsDB)).WillReturnRows(migrationRows)
-
-	manager, err := NewMigrationManager(
-		WithConn(conn),
-		WithLogger(zap.NewNop()),
-	)
+	conn.ExpectQueryRow(baselineInventoryQuery).WillReturnRow(mockhouse.NewRow(
+		[]mockhouse.ColumnType{{Name: "domain_tables", Type: "UInt64"}, {Name: "legacy_tables", Type: "UInt64"}, {Name: "tracking_tables", Type: "UInt64"}},
+		[]any{uint64(6), uint64(0), uint64(1)},
+	))
+	conn.ExpectQuery(baselineMigrationsQuery(SigInsightLogsDB)).WillReturnRows(mockhouse.NewRows(
+		[]mockhouse.ColumnType{{Name: "migration_id", Type: "UInt64"}, {Name: "status", Type: "String"}},
+		[][]any{{uint64(999), FinishedStatus}},
+	))
+	manager, err := NewMigrationManager(WithConn(conn), WithLogger(zap.NewNop()))
 	require.NoError(t, err)
-
 	got, err := manager.InspectBaselineState(context.Background(), BaselineSpec{
-		Database:             SigInsightLogsDB,
-		BaseMigrationIDs:     []uint64{1},
-		RequiredMigrationIDs: []uint64{1000},
+		Database: SigInsightLogsDB, BaselineMigration: SchemaMigrationRecord{MigrationID: CanonicalBaselineMigrationID},
 	})
 	require.NoError(t, err)
-	assert.Equal(t, BaselineStateCompleteFresh, got.State)
+	assert.Equal(t, BaselineStateComplete, got.State)
 	require.NoError(t, conn.ExpectationsWereMet())
-}
-
-func baselineDatabases(specs []BaselineSpec) []string {
-	databases := make([]string, 0, len(specs))
-	for _, spec := range specs {
-		databases = append(databases, spec.Database)
-	}
-	return databases
 }

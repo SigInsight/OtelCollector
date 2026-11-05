@@ -28,7 +28,11 @@ install-tools:
 .DEFAULT_GOAL := test-and-lint
 
 .PHONY: test-and-lint
-test-and-lint: test fmt lint
+test-and-lint: test validate-example-compose fmt lint
+
+.PHONY: validate-example-compose
+validate-example-compose:
+	@./scripts/validate-example-compose.sh
 
 .PHONY: test
 test:
@@ -61,6 +65,16 @@ run:
 fmt:
 	@echo Running go fmt on query service ...
 	@$(GOFMT) -e -s -l -w .
+
+.PHONY: format-staged
+format-staged:
+	@./scripts/format-staged.sh
+
+.PHONY: install-git-hooks
+install-git-hooks:
+	@git config core.hooksPath .githooks
+	@chmod +x .githooks/pre-commit scripts/format-staged.sh
+	@echo "Installed repository Git hooks."
 
 .PHONY: build-and-push-siginsight-collector
 build-and-push-siginsight-collector:

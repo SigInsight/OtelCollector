@@ -9,7 +9,7 @@ single-node ClickHouse instance.
 ```
 example/docker/
 ├── docker-compose.yaml            this file's stack definition
-├── .env.example                   tag overrides (OTELCOL_TAG, VERSION, ...)
+├── .env.example                   tag overrides (OTELCOL_TAG, SIGINSIGHT_TAG, ...)
 └── common/                        configs mounted into containers
     ├── clickhouse/                config.xml, users.xml, cluster.xml, ...
     └── siginsight/
@@ -32,13 +32,34 @@ upstream stack changes if you want to track new defaults.
 
 ```bash
 cd example/docker
-cp .env.example .env                      # set OTELCOL_TAG to the GHCR tag
+cp .env.example .env                      # set paired Collector/SigInsight tags
 # put your ClickHouse / opamp / collector configs in place
 docker compose up -d
 docker compose logs -f siginsight-otel-collector
 ```
 
 Open the UI at <http://localhost:8080>.
+
+## Destructive v2.0.0 schema cutover
+
+Collector `v2.0.0+` creates the canonical ClickHouse schema directly. It does
+not migrate the historical versioned tables, copy telemetry, or infer a
+migration marker from an old database. An upgrade from an earlier collector
+must discard the ClickHouse telemetry volume before the first `up`:
+
+```bash
+cd example/docker
+docker compose down
+docker volume rm siginsight-clickhouse
+docker compose up -d
+docker compose logs -f siginsight-telemetrystore-migrator
+```
+
+Do not use `docker compose down -v` unless SQLite data (users, alert rules and
+other application state) should also be erased. The compose file starts
+SigInsight and the collector only after the migration job has succeeded. If it
+stops with a non-zero exit code, inspect that job rather than waiting for the
+application containers to retry.
 
 ## Pulling from GHCR
 
@@ -57,9 +78,9 @@ You can also point at a GHCR mirror by overriding the image in
 ```yaml
 services:
   otel-collector:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v1.2.0
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v2.0.1
   siginsight-telemetrystore-migrator:
-    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v1.2.0
+    image: mirror-ghcr-hvfd.onrender.com/siginsight/siginsight-otel-collector:v2.0.1
 ```
 
 ## Notes
@@ -69,6 +90,8 @@ services:
   binary, and a mismatch will make the collector's `migrate sync check`
   fail or, worse, write into a stale schema. The compose file uses the
   single `OTELCOL_TAG` variable for both.
+- `SIGINSIGHT_TAG` must point at a release that reads the canonical schema.
+  The checked-in default pairs SigInsight `v2.2.2` with Collector `v2.0.1`.
 - The amd64 image is the only one this fork's CI builds. On arm64 hosts
   you'll need to re-enable arm64 in `.github/workflows/build.yaml` and
   rebuild.

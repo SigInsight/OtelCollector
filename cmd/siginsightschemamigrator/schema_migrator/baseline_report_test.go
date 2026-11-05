@@ -12,60 +12,12 @@ func TestCombineBaselineInspections(t *testing.T) {
 		inspections []BaselineInspection
 		want        BaselineState
 	}{
-		{
-			name: "all empty",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStateEmpty},
-				{Database: SigInsightMetricsDB, State: BaselineStateEmpty},
-			},
-			want: BaselineStateEmpty,
-		},
-		{
-			name: "all fresh",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStateCompleteFresh},
-				{Database: SigInsightMetricsDB, State: BaselineStateCompleteFresh},
-			},
-			want: BaselineStateCompleteFresh,
-		},
-		{
-			name: "complete with legacy history",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStateCompleteLegacy},
-				{Database: SigInsightMetricsDB, State: BaselineStateCompleteFresh},
-			},
-			want: BaselineStateCompleteLegacy,
-		},
-		{
-			name: "mixed empty and complete",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStateEmpty},
-				{Database: SigInsightMetricsDB, State: BaselineStateCompleteFresh},
-			},
-			want: BaselineStatePartial,
-		},
-		{
-			name: "partial",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStateCompleteFresh},
-				{Database: SigInsightMetricsDB, State: BaselineStatePartial},
-			},
-			want: BaselineStatePartial,
-		},
-		{
-			name: "ahead takes precedence",
-			inspections: []BaselineInspection{
-				{Database: SigInsightLogsDB, State: BaselineStatePartial},
-				{Database: SigInsightMetricsDB, State: BaselineStateAhead},
-			},
-			want: BaselineStateAhead,
-		},
-		{
-			name: "no inspections",
-			want: BaselineStatePartial,
-		},
+		{name: "all empty", inspections: []BaselineInspection{{State: BaselineStateEmpty}, {State: BaselineStateEmpty}}, want: BaselineStateEmpty},
+		{name: "all complete", inspections: []BaselineInspection{{State: BaselineStateComplete}, {State: BaselineStateComplete}}, want: BaselineStateComplete},
+		{name: "mixed", inspections: []BaselineInspection{{State: BaselineStateEmpty}, {State: BaselineStateComplete}}, want: BaselineStateIncompatible},
+		{name: "one incompatible", inspections: []BaselineInspection{{State: BaselineStateComplete}, {State: BaselineStateIncompatible}}, want: BaselineStateIncompatible},
+		{name: "none", want: BaselineStateIncompatible},
 	}
-
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := CombineBaselineInspections(tc.inspections)

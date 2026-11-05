@@ -121,8 +121,11 @@ and recreated before deploying v2.0.0.
 
 - `migrate sync check`
 
-  Reports whether any pending synchronous (lightweight, idempotent, non-mutation)
-  migrations exist. Used as a readiness gate before the collector starts ingesting.
+  Verifies the consolidated baseline marker, recomputes the runtime-stable canonical
+  schema fingerprint, and reports whether synchronous migrations are pending. The
+  fingerprint includes stable table keys, Materialized View definitions, column
+  types/codecs and skip indexes. Runtime retention TTL/default changes are excluded.
+  Used as a readiness gate before the collector starts ingesting.
 
 - `migrate sync up`
 
